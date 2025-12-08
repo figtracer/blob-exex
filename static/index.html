@@ -362,7 +362,26 @@
             const chartOptions = {
                 responsive: true,
                 maintainAspectRatio: false,
-                plugins: { legend: { display: false } },
+                interaction: {
+                    intersect: false,
+                    mode: "index",
+                },
+                plugins: {
+                    legend: { display: false },
+                    tooltip: {
+                        enabled: true,
+                        backgroundColor: "#1e1e2e",
+                        borderColor: "#45475a",
+                        borderWidth: 1,
+                        titleColor: "#cdd6f4",
+                        bodyColor: "#a6adc8",
+                        padding: 10,
+                        displayColors: false,
+                        callbacks: {
+                            title: (ctx) => `Block ${ctx[0].label}`,
+                        },
+                    },
+                },
                 scales: {
                     x: {
                         display: false,
@@ -374,7 +393,7 @@
                     },
                 },
                 elements: {
-                    point: { radius: 0 },
+                    point: { radius: 0, hoverRadius: 5 },
                     line: { tension: 0.3 },
                 },
             };
