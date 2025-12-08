@@ -19,20 +19,20 @@ struct Stats {
     total_transactions: u64,
     avg_blobs_per_block: f64,
     latest_block: Option<u64>,
-    avg_blob_gas_price: f64,
+    avg_gas_price: f64,
 }
 
 #[derive(Serialize)]
-struct BlobBlock {
+struct Block {
     block_number: u64,
-    blob_tx_count: u64,
+    tx_count: u64,
     total_blobs: u64,
-    blob_gas_used: u64,
-    blob_gas_price: u64,
+    gas_used: u64,
+    gas_price: u64,
 }
 
 #[derive(Serialize)]
-struct BlobSender {
+struct Sender {
     address: String,
     tx_count: u64,
     total_blobs: u64,
@@ -67,20 +67,18 @@ async fn get_stats(State(db_path): State<DbPath>) -> Json<Stats> {
         .unwrap_or(0);
 
     let total_transactions: u64 = conn
-        .query_row(
-            "SELECT COALESCE(SUM(blob_tx_count), 0) FROM blocks",
-            [],
-            |row| row.get(0),
-        )
+        .query_row("SELECT COALESCE(SUM(tx_count), 0) FROM blocks", [], |row| {
+            row.get(0)
+        })
         .unwrap_or(0);
 
     let latest_block: Option<u64> = conn
         .query_row("SELECT MAX(block_number) FROM blocks", [], |row| row.get(0))
         .ok();
 
-    let avg_blob_gas_price: f64 = conn
+    let avg_gas_price: f64 = conn
         .query_row(
-            "SELECT COALESCE(AVG(blob_gas_price), 0) FROM blocks",
+            "SELECT COALESCE(AVG(gas_price), 0) FROM blocks",
             [],
             |row| row.get(0),
         )
@@ -98,28 +96,28 @@ async fn get_stats(State(db_path): State<DbPath>) -> Json<Stats> {
         total_transactions,
         avg_blobs_per_block,
         latest_block,
-        avg_blob_gas_price,
+        avg_gas_price,
     })
 }
 
-async fn get_recent_blocks(State(db_path): State<DbPath>) -> Json<Vec<BlobBlock>> {
+async fn get_recent_blocks(State(db_path): State<DbPath>) -> Json<Vec<Block>> {
     let conn = open_db(&db_path).expect("Failed to open database");
 
     let mut stmt = conn
         .prepare(
-            "SELECT block_number, blob_tx_count, total_blobs, blob_gas_used, blob_gas_price
+            "SELECT block_number, tx_count, total_blobs, gas_used, gas_price
              FROM blocks ORDER BY block_number DESC LIMIT 50",
         )
         .unwrap();
 
-    let blocks: Vec<BlobBlock> = stmt
+    let blocks: Vec<Block> = stmt
         .query_map([], |row| {
-            Ok(BlobBlock {
+            Ok(Block {
                 block_number: row.get(0)?,
-                blob_tx_count: row.get(1)?,
+                tx_count: row.get(1)?,
                 total_blobs: row.get(2)?,
-                blob_gas_used: row.get(3)?,
-                blob_gas_price: row.get(4)?,
+                gas_used: row.get(3)?,
+                gas_price: row.get(4)?,
             })
         })
         .unwrap()
@@ -129,7 +127,7 @@ async fn get_recent_blocks(State(db_path): State<DbPath>) -> Json<Vec<BlobBlock>
     Json(blocks)
 }
 
-async fn get_top_senders(State(db_path): State<DbPath>) -> Json<Vec<BlobSender>> {
+async fn get_top_senders(State(db_path): State<DbPath>) -> Json<Vec<Sender>> {
     let conn = open_db(&db_path).expect("Failed to open database");
 
     let mut stmt = conn
@@ -139,9 +137,9 @@ async fn get_top_senders(State(db_path): State<DbPath>) -> Json<Vec<BlobSender>>
         )
         .unwrap();
 
-    let senders: Vec<BlobSender> = stmt
+    let senders: Vec<Sender> = stmt
         .query_map([], |row| {
-            Ok(BlobSender {
+            Ok(Sender {
                 address: row.get(0)?,
                 tx_count: row.get(1)?,
                 total_blobs: row.get(2)?,
@@ -159,7 +157,7 @@ async fn get_chart_data(State(db_path): State<DbPath>) -> Json<ChartData> {
 
     let mut stmt = conn
         .prepare(
-            "SELECT block_number, total_blobs, blob_gas_price
+            "SELECT block_number, total_blobs, gas_price
              FROM blocks ORDER BY block_number DESC LIMIT 100",
         )
         .unwrap();

@@ -470,7 +470,7 @@
                             ? formatNumber(data.latest_block)
                             : "-";
                     document.getElementById("avg-gas").textContent = formatGwei(
-                        data.avg_blob_gas_price,
+                        data.avg_gas_price,
                     );
                 } catch (e) {
                     console.error("Failed to fetch stats:", e);
@@ -488,9 +488,9 @@
                             (b) => `
                     <tr>
                         <td class="number">${formatNumber(b.block_number)}</td>
-                        <td>${b.blob_tx_count}</td>
+                        <td>${b.tx_count}</td>
                         <td>${b.total_blobs}</td>
-                        <td>${formatGwei(b.blob_gas_price)}</td>
+                        <td>${formatGwei(b.gas_price)}</td>
                     </tr>
                 `,
                         )
