@@ -7,10 +7,10 @@ use axum::{
 };
 use rusqlite::Connection;
 use serde::Serialize;
-use std::sync::{Arc, Mutex};
+use std::sync::Arc;
 use tower_http::cors::CorsLayer;
 
-type Db = Arc<Mutex<Connection>>;
+type DbPath = Arc<String>;
 
 #[derive(Serialize)]
 struct Stats {
@@ -45,8 +45,14 @@ struct ChartData {
     gas_prices: Vec<f64>,
 }
 
-async fn get_stats(State(db): State<Db>) -> Json<Stats> {
-    let conn = db.lock().unwrap();
+fn open_db(path: &str) -> Result<Connection, rusqlite::Error> {
+    let conn = Connection::open(path)?;
+    conn.pragma_update(None, "journal_mode", "WAL")?;
+    Ok(conn)
+}
+
+async fn get_stats(State(db_path): State<DbPath>) -> Json<Stats> {
+    let conn = open_db(&db_path).expect("Failed to open database");
 
     let total_blocks: u64 = conn
         .query_row("SELECT COUNT(*) FROM blob_blocks", [], |row| row.get(0))
@@ -98,8 +104,8 @@ async fn get_stats(State(db): State<Db>) -> Json<Stats> {
     })
 }
 
-async fn get_recent_blocks(State(db): State<Db>) -> Json<Vec<BlobBlock>> {
-    let conn = db.lock().unwrap();
+async fn get_recent_blocks(State(db_path): State<DbPath>) -> Json<Vec<BlobBlock>> {
+    let conn = open_db(&db_path).expect("Failed to open database");
 
     let mut stmt = conn
         .prepare(
@@ -125,8 +131,8 @@ async fn get_recent_blocks(State(db): State<Db>) -> Json<Vec<BlobBlock>> {
     Json(blocks)
 }
 
-async fn get_top_senders(State(db): State<Db>) -> Json<Vec<BlobSender>> {
-    let conn = db.lock().unwrap();
+async fn get_top_senders(State(db_path): State<DbPath>) -> Json<Vec<BlobSender>> {
+    let conn = open_db(&db_path).expect("Failed to open database");
 
     let mut stmt = conn
         .prepare(
@@ -150,8 +156,8 @@ async fn get_top_senders(State(db): State<Db>) -> Json<Vec<BlobSender>> {
     Json(senders)
 }
 
-async fn get_chart_data(State(db): State<Db>) -> Json<ChartData> {
-    let conn = db.lock().unwrap();
+async fn get_chart_data(State(db_path): State<DbPath>) -> Json<ChartData> {
+    let conn = open_db(&db_path).expect("Failed to open database");
 
     let mut stmt = conn
         .prepare(
@@ -177,10 +183,9 @@ async fn get_chart_data(State(db): State<Db>) -> Json<ChartData> {
     for row in rows.flatten() {
         labels.push(row.0);
         blobs.push(row.1);
-        gas_prices.push(row.2 as f64 / 1e9); // Convert to Gwei
+        gas_prices.push(row.2 as f64 / 1e9);
     }
 
-    // Reverse so oldest is first (for chart display)
     labels.reverse();
     blobs.reverse();
     gas_prices.reverse();
@@ -202,8 +207,11 @@ async fn index() -> impl IntoResponse {
 #[tokio::main]
 async fn main() -> eyre::Result<()> {
     let db_path = std::env::var("BLOB_DB_PATH").unwrap_or_else(|_| "blob_stats.db".to_string());
-    let connection = Connection::open(&db_path)?;
-    let db: Db = Arc::new(Mutex::new(connection));
+
+    // Verify DB is accessible
+    let _ = open_db(&db_path)?;
+
+    let db_path: DbPath = Arc::new(db_path);
 
     let app = Router::new()
         .route("/", get(index))
@@ -212,12 +220,12 @@ async fn main() -> eyre::Result<()> {
         .route("/api/senders", get(get_top_senders))
         .route("/api/chart", get(get_chart_data))
         .layer(CorsLayer::permissive())
-        .with_state(db);
+        .with_state(db_path);
 
     let addr = std::env::var("BLOB_WEB_ADDR").unwrap_or_else(|_| "0.0.0.0:3000".to_string());
     let listener = tokio::net::TcpListener::bind(&addr).await?;
 
-    println!("🟣 ExBlob running at http://{}", addr);
+    println!("ExBlob running at http://{}", addr);
 
     axum::serve(listener, app).await?;
 
