@@ -217,7 +217,7 @@ async fn main() -> eyre::Result<()> {
     let addr = std::env::var("BLOB_WEB_ADDR").unwrap_or_else(|_| "0.0.0.0:3000".to_string());
     let listener = tokio::net::TcpListener::bind(&addr).await?;
 
-    println!("🌐 Blob dashboard running at http://{}", addr);
+    println!("🟣 ExBlob running at http://{}", addr);
 
     axum::serve(listener, app).await?;
 

@@ -313,7 +313,7 @@
                     </div>
                 </div>
                 <div class="chart-card">
-                    <h2>Gas Price (Gwei)</h2>
+                    <h2>Blob Gas Price (Gwei)</h2>
                     <div class="chart-container">
                         <canvas id="gas-chart"></canvas>
                     </div>
@@ -338,7 +338,7 @@
                     </div>
                 </div>
                 <div class="table-card">
-                    <h2>Top Senders</h2>
+                    <h2>Top Blob Senders</h2>
                     <div class="table-scroll">
                         <table>
                             <thead>
@@ -356,6 +356,9 @@
         </div>
 
         <script>
+            // Configure API URL - change this for Vercel deployment
+            // e.g., "https://your-server.com" or leave empty for same-origin
+            const API_URL = "";
             const POLL_INTERVAL = 3000;
             let blobsChart, gasChart;
 
@@ -435,7 +438,7 @@
 
             async function fetchStats() {
                 try {
-                    const res = await fetch("/api/stats");
+                    const res = await fetch(`${API_URL}/api/stats`);
                     const data = await res.json();
 
                     document.getElementById("total-blocks").textContent =
@@ -460,7 +463,7 @@
 
             async function fetchBlocks() {
                 try {
-                    const res = await fetch("/api/blocks");
+                    const res = await fetch(`${API_URL}/api/blocks`);
                     const blocks = await res.json();
 
                     const tbody = document.getElementById("blocks-table");
@@ -483,7 +486,7 @@
 
             async function fetchSenders() {
                 try {
-                    const res = await fetch("/api/senders");
+                    const res = await fetch(`${API_URL}/api/senders`);
                     const senders = await res.json();
 
                     const tbody = document.getElementById("senders-table");
@@ -505,7 +508,7 @@
 
             async function fetchChartData() {
                 try {
-                    const res = await fetch("/api/chart");
+                    const res = await fetch(`${API_URL}/api/chart`);
                     const data = await res.json();
 
                     blobsChart.data.labels = data.labels;

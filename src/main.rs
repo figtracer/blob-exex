@@ -52,12 +52,12 @@ where
 fn create_tables(conn: &Connection) -> rusqlite::Result<()> {
     conn.execute(
         r#"
-        CREATE TABLE IF NOT EXISTS blob_blocks (
+        CREATE TABLE IF NOT EXISTS blocks (
             block_number INTEGER PRIMARY KEY,
-            blob_tx_count INTEGER NOT NULL,
+            tx_count INTEGER NOT NULL,
             total_blobs INTEGER NOT NULL,
-            blob_gas_used INTEGER NOT NULL,
-            blob_gas_price INTEGER NOT NULL
+            gas_used INTEGER NOT NULL,
+            gas_price INTEGER NOT NULL
         )
         "#,
         (),
@@ -65,7 +65,7 @@ fn create_tables(conn: &Connection) -> rusqlite::Result<()> {
 
     conn.execute(
         r#"
-        CREATE TABLE IF NOT EXISTS blob_senders (
+        CREATE TABLE IF NOT EXISTS senders (
             address TEXT PRIMARY KEY,
             tx_count INTEGER NOT NULL DEFAULT 0,
             total_blobs INTEGER NOT NULL DEFAULT 0
@@ -110,7 +110,7 @@ fn process_chain(db: &Connection, chain: &Chain) -> eyre::Result<()> {
 
         if blob_tx_count > 0 {
             db.execute(
-                "INSERT OR REPLACE INTO blob_blocks VALUES (?, ?, ?, ?, ?)",
+                "INSERT OR REPLACE INTO blocks VALUES (?, ?, ?, ?, ?)",
                 (
                     block_number,
                     blob_tx_count,
@@ -124,7 +124,7 @@ fn process_chain(db: &Connection, chain: &Chain) -> eyre::Result<()> {
                 block = block_number,
                 txs = blob_tx_count,
                 blobs = total_blobs,
-                "Blob block"
+                "📦 ExBlob"
             );
         }
     }
@@ -135,7 +135,7 @@ fn process_chain(db: &Connection, chain: &Chain) -> eyre::Result<()> {
 fn update_sender(db: &Connection, sender: Address, num_blobs: u64) -> rusqlite::Result<()> {
     db.execute(
         r#"
-        INSERT INTO blob_senders (address, tx_count, total_blobs)
+        INSERT INTO senders (address, tx_count, total_blobs)
         VALUES (?, 1, ?)
         ON CONFLICT(address) DO UPDATE SET
             tx_count = tx_count + 1,
@@ -150,7 +150,7 @@ fn update_sender(db: &Connection, sender: Address, num_blobs: u64) -> rusqlite::
 fn revert_chain(db: &Connection, chain: &Chain) -> eyre::Result<()> {
     for block in chain.blocks_iter() {
         db.execute(
-            "DELETE FROM blob_blocks WHERE block_number = ?",
+            "DELETE FROM blocks WHERE block_number = ?",
             (block.header().number(),),
         )?;
     }
