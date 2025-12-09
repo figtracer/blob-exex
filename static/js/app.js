@@ -76,10 +76,8 @@ function initCharts() {
         y: {
           ...chartOptions.scales.y,
           beginAtZero: true,
-          max: 9,
           ticks: {
             ...chartOptions.scales.y.ticks,
-            stepSize: 3,
             precision: 0,
           },
         },
@@ -350,7 +348,7 @@ async function fetchStats() {
       ? formatNumber(data.latest_block)
       : "-";
     document.getElementById("avg-gas").textContent = formatGwei(
-      data.avg_gas_price,
+      data.latest_gas_price,
     );
   } catch (e) {
     console.error("Failed to fetch stats:", e);
@@ -414,23 +412,21 @@ async function fetchSenders() {
   }
 }
 
-// Downsample data using LTTB algorithm for better visual representation
-function downsampleData(labels, values, threshold = 100) {
-  if (labels.length <= threshold) {
+// Adaptive rendering: show all data for smaller datasets, use consistent
+// max-width rendering for larger datasets to maintain performance
+function adaptiveRender(labels, values, maxPoints = 500) {
+  if (labels.length <= maxPoints) {
+    // Show all data points
     return { labels, values };
   }
 
-  // Simple downsampling - take every nth point
-  const step = Math.ceil(labels.length / threshold);
-  const newLabels = [];
-  const newValues = [];
-
-  for (let i = 0; i < labels.length; i += step) {
-    newLabels.push(labels[i]);
-    newValues.push(values[i]);
-  }
-
-  return { labels: newLabels, values: newValues };
+  // For larger datasets, show the most recent maxPoints
+  // This is deterministic and consistent across polls
+  const startIndex = labels.length - maxPoints;
+  return {
+    labels: labels.slice(startIndex),
+    values: values.slice(startIndex),
+  };
 }
 
 async function fetchChartData() {
@@ -438,16 +434,17 @@ async function fetchChartData() {
     const res = await fetch(`/api/chart?hours=${selectedHours}`);
     const data = await res.json();
 
-    // Downsample for smoother display
-    const blobsDown = downsampleData(data.labels, data.blobs, 100);
-    const gasDown = downsampleData(data.labels, data.gas_prices, 100);
+    // Use adaptive rendering to handle both small and large datasets
+    // This ensures consistent display on every poll
+    const blobsData = adaptiveRender(data.labels, data.blobs, 1000);
+    const gasData = adaptiveRender(data.labels, data.gas_prices, 1000);
 
-    blobsChart.data.labels = blobsDown.labels;
-    blobsChart.data.datasets[0].data = blobsDown.values;
+    blobsChart.data.labels = blobsData.labels;
+    blobsChart.data.datasets[0].data = blobsData.values;
     blobsChart.update("none");
 
-    gasChart.data.labels = gasDown.labels;
-    gasChart.data.datasets[0].data = gasDown.values;
+    gasChart.data.labels = gasData.labels;
+    gasChart.data.datasets[0].data = gasData.values;
     gasChart.update("none");
   } catch (e) {
     console.error("Failed to fetch chart data:", e);

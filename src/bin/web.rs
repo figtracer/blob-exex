@@ -22,7 +22,7 @@ struct Stats {
     total_transactions: u64,
     avg_blobs_per_block: f64,
     latest_block: Option<u64>,
-    avg_gas_price: f64,
+    latest_gas_price: u64,
 }
 
 #[derive(Serialize)]
@@ -200,13 +200,13 @@ async fn get_stats(State(db_path): State<DbPath>) -> Json<Stats> {
         .query_row("SELECT MAX(block_number) FROM blocks", [], |row| row.get(0))
         .ok();
 
-    let avg_gas_price: f64 = conn
+    let latest_gas_price: u64 = conn
         .query_row(
-            "SELECT COALESCE(AVG(gas_price), 0) FROM blocks",
+            "SELECT COALESCE(gas_price, 0) FROM blocks ORDER BY block_number DESC LIMIT 1",
             [],
             |row| row.get(0),
         )
-        .unwrap_or(0.0);
+        .unwrap_or(0);
 
     let avg_blobs_per_block = if total_blocks > 0 {
         total_blobs as f64 / total_blocks as f64
@@ -220,7 +220,7 @@ async fn get_stats(State(db_path): State<DbPath>) -> Json<Stats> {
         total_transactions,
         avg_blobs_per_block,
         latest_block,
-        avg_gas_price,
+        latest_gas_price,
     })
 }
 
