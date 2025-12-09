@@ -251,6 +251,8 @@ function showBlockModal(block) {
   const modalBody = document.getElementById("modal-body");
   const slot = getSlotFromBlock(block.block_number);
 
+  console.log("Block transactions:", block.transactions);
+
   const txList =
     block.transactions && block.transactions.length > 0
       ? block.transactions
