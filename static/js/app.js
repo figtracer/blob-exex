@@ -38,6 +38,12 @@ const chartOptions = {
   },
 };
 
+// Track mouse position globally
+let mouseY = 0;
+document.addEventListener("mousemove", (e) => {
+  mouseY = e.clientY;
+});
+
 // Custom tooltip function that follows mouse
 function customTooltip(context) {
   let tooltipEl = document.getElementById("chartjs-tooltip");
@@ -51,8 +57,9 @@ function customTooltip(context) {
     tooltipEl.style.opacity = 1;
     tooltipEl.style.pointerEvents = "none";
     tooltipEl.style.position = "absolute";
-    tooltipEl.style.transform = "translate(-50%, -120%)";
-    tooltipEl.style.transition = "opacity 0.1s ease";
+    tooltipEl.style.transform = "translate(-50%, -100%)";
+    tooltipEl.style.transition =
+      "opacity 0.1s ease, left 0.05s ease, top 0.05s ease";
     tooltipEl.style.border = "1px solid #45475a";
     tooltipEl.style.padding = "8px 12px";
     tooltipEl.style.fontSize = "0.8rem";
@@ -87,10 +94,10 @@ function customTooltip(context) {
 
   const position = context.chart.canvas.getBoundingClientRect();
   tooltipEl.style.opacity = 1;
+  // Use caretX for horizontal position but use mouse Y position for vertical
   tooltipEl.style.left =
     position.left + window.pageXOffset + tooltipModel.caretX + "px";
-  tooltipEl.style.top =
-    position.top + window.pageYOffset + tooltipModel.caretY + "px";
+  tooltipEl.style.top = mouseY + window.pageYOffset - 15 + "px";
 }
 
 // Initialize charts
@@ -114,6 +121,20 @@ function initCharts() {
     },
     options: {
       ...chartOptions,
+      onHover: (event, elements) => {
+        // Reset all bar colors
+        blobsChart.data.datasets[0].backgroundColor =
+          blobsChart.data.labels.map(() => "rgba(148, 226, 213, 0.7)");
+        // Highlight hovered bar
+        if (elements.length > 0) {
+          const index = elements[0].index;
+          const colors = blobsChart.data.labels.map((_, i) =>
+            i === index ? "rgba(148, 226, 213, 1)" : "rgba(148, 226, 213, 0.5)",
+          );
+          blobsChart.data.datasets[0].backgroundColor = colors;
+        }
+        blobsChart.update("none");
+      },
       plugins: {
         ...chartOptions.plugins,
         tooltip: {
@@ -189,6 +210,16 @@ function initCharts() {
             }
           },
         },
+      },
+      elements: {
+        point: {
+          radius: 0,
+          hoverRadius: 6,
+          hoverBackgroundColor: "#f9e2af",
+          hoverBorderColor: "#f9e2af",
+          hoverBorderWidth: 2,
+        },
+        line: { tension: 0.3 },
       },
       scales: {
         ...chartOptions.scales,
