@@ -3,7 +3,7 @@
     <head>
         <meta charset="UTF-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-        <title>ExBlob</title>
+        <title>Blob Explorer</title>
         <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
         <style>
             :root {
@@ -43,32 +43,58 @@
                 background: var(--ctp-base);
                 color: var(--ctp-text);
                 line-height: 1.6;
-                padding: 2rem;
                 min-height: 100vh;
             }
 
             .container {
                 max-width: 1400px;
                 margin: 0 auto;
+                padding: 0 2rem 2rem;
             }
 
+            /* Header styles inspired by Blobscan */
             header {
+                background: var(--ctp-crust);
+                border-bottom: 1px solid var(--ctp-surface0);
+                padding: 0.75rem 2rem;
+                margin-bottom: 2rem;
+                position: sticky;
+                top: 0;
+                z-index: 50;
+            }
+
+            .header-content {
+                max-width: 1400px;
+                margin: 0 auto;
                 display: flex;
                 justify-content: space-between;
                 align-items: center;
-                margin-bottom: 2rem;
-                padding-bottom: 1rem;
-                border-bottom: 1px solid var(--ctp-surface0);
             }
 
-            h1 {
-                font-size: 1.75rem;
-                font-weight: 600;
-                color: var(--ctp-lavender);
+            .header-left {
+                display: flex;
+                align-items: center;
+                gap: 2rem;
             }
 
-            h1 span {
-                color: var(--ctp-peach);
+            .header-subtitle {
+                font-size: 0.8rem;
+                color: var(--ctp-subtext0);
+            }
+
+            .header-subtitle a {
+                color: var(--ctp-mauve);
+                text-decoration: none;
+            }
+
+            .header-subtitle a:hover {
+                text-decoration: underline;
+            }
+
+            .header-right {
+                display: flex;
+                align-items: center;
+                gap: 1.5rem;
             }
 
             .status {
@@ -76,7 +102,7 @@
                 align-items: center;
                 gap: 0.5rem;
                 color: var(--ctp-subtext0);
-                font-size: 0.875rem;
+                font-size: 0.8rem;
             }
 
             .status-dot {
@@ -95,6 +121,92 @@
                 50% {
                     opacity: 0.5;
                 }
+            }
+
+            .time-picker {
+                position: relative;
+                display: inline-block;
+            }
+
+            .time-picker-btn {
+                display: flex;
+                align-items: center;
+                gap: 0.5rem;
+                padding: 0.4rem 0.75rem;
+                background: var(--ctp-surface0);
+                border: 1px solid var(--ctp-surface1);
+                border-radius: 4px;
+                color: var(--ctp-text);
+                font-size: 0.8rem;
+                cursor: pointer;
+                transition: all 0.15s ease;
+            }
+
+            .time-picker-btn:hover {
+                background: var(--ctp-surface1);
+                border-color: var(--ctp-surface2);
+            }
+
+            .time-picker-btn svg {
+                width: 14px;
+                height: 14px;
+                color: var(--ctp-subtext0);
+            }
+
+            .time-picker-dropdown {
+                position: absolute;
+                top: calc(100% + 4px);
+                right: 0;
+                min-width: 180px;
+                background: var(--ctp-mantle);
+                border: 1px solid var(--ctp-surface1);
+                border-radius: 4px;
+                box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+                z-index: 100;
+                display: none;
+            }
+
+            .time-picker-dropdown.open {
+                display: block;
+            }
+
+            .time-picker-section {
+                padding: 0.5rem 0;
+                border-bottom: 1px solid var(--ctp-surface0);
+            }
+
+            .time-picker-section:last-child {
+                border-bottom: none;
+            }
+
+            .time-picker-label {
+                padding: 0.25rem 1rem;
+                font-size: 0.7rem;
+                text-transform: uppercase;
+                letter-spacing: 0.05em;
+                color: var(--ctp-subtext0);
+            }
+
+            .time-picker-option {
+                display: block;
+                width: 100%;
+                padding: 0.5rem 1rem;
+                background: none;
+                border: none;
+                text-align: left;
+                color: var(--ctp-text);
+                font-size: 0.8rem;
+                cursor: pointer;
+                transition: background 0.1s ease;
+            }
+
+            .time-picker-option:hover {
+                background: var(--ctp-surface0);
+            }
+
+            .time-picker-option.active {
+                background: var(--ctp-surface0);
+                color: var(--ctp-blue);
             }
 
             .stats-grid {
@@ -199,13 +311,13 @@
 
             th,
             td {
-                padding: 0.75rem 1.25rem;
+                padding: 0.75rem 1rem;
                 text-align: left;
                 border-bottom: 1px solid var(--ctp-surface0);
             }
 
             th {
-                font-size: 0.75rem;
+                font-size: 0.7rem;
                 text-transform: uppercase;
                 letter-spacing: 0.05em;
                 color: var(--ctp-subtext0);
@@ -214,7 +326,7 @@
             }
 
             td {
-                font-size: 0.875rem;
+                font-size: 0.8rem;
                 font-variant-numeric: tabular-nums;
             }
 
@@ -222,9 +334,13 @@
                 background: var(--ctp-surface0);
             }
 
+            tr.clickable {
+                cursor: pointer;
+            }
+
             .address {
                 font-family: "SF Mono", Monaco, "Cascadia Code", monospace;
-                font-size: 0.8rem;
+                font-size: 0.75rem;
                 color: var(--ctp-sapphire);
             }
 
@@ -254,111 +370,25 @@
                 background: var(--ctp-surface2);
             }
 
-            .time-picker {
-                position: relative;
-                display: inline-block;
-            }
-
-            .time-picker-btn {
-                display: flex;
-                align-items: center;
-                gap: 0.5rem;
-                padding: 0.5rem 1rem;
-                background: var(--ctp-surface0);
-                border: 1px solid var(--ctp-surface1);
-                border-radius: 4px;
-                color: var(--ctp-text);
-                font-size: 0.875rem;
-                cursor: pointer;
-                transition: all 0.15s ease;
-            }
-
-            .time-picker-btn:hover {
-                background: var(--ctp-surface1);
-                border-color: var(--ctp-surface2);
-            }
-
-            .time-picker-btn svg {
-                width: 16px;
-                height: 16px;
-                color: var(--ctp-subtext0);
-            }
-
-            .time-picker-dropdown {
-                position: absolute;
-                top: calc(100% + 4px);
-                right: 0;
-                min-width: 180px;
-                background: var(--ctp-mantle);
-                border: 1px solid var(--ctp-surface1);
-                border-radius: 4px;
-                box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
-                z-index: 100;
-                display: none;
-            }
-
-            .time-picker-dropdown.open {
-                display: block;
-            }
-
-            .time-picker-section {
-                padding: 0.5rem 0;
-                border-bottom: 1px solid var(--ctp-surface0);
-            }
-
-            .time-picker-section:last-child {
-                border-bottom: none;
-            }
-
-            .time-picker-label {
-                padding: 0.25rem 1rem;
-                font-size: 0.7rem;
-                text-transform: uppercase;
-                letter-spacing: 0.05em;
-                color: var(--ctp-subtext0);
-            }
-
-            .time-picker-option {
-                display: block;
-                width: 100%;
-                padding: 0.5rem 1rem;
-                background: none;
-                border: none;
-                text-align: left;
-                color: var(--ctp-text);
-                font-size: 0.875rem;
-                cursor: pointer;
-                transition: background 0.1s ease;
-            }
-
-            .time-picker-option:hover {
-                background: var(--ctp-surface0);
-            }
-
-            .time-picker-option.active {
-                background: var(--ctp-surface0);
-                color: var(--ctp-blue);
-            }
-
             .chain-badge {
                 display: inline-block;
-                padding: 0.25rem 0.5rem;
+                padding: 0.2rem 0.5rem;
                 border-radius: 4px;
-                font-size: 0.75rem;
+                font-size: 0.7rem;
                 font-weight: 500;
             }
 
             .chain-base {
-                background: var(--ctp-blue);
-                color: var(--ctp-base);
+                background: #0052ff;
+                color: white;
             }
             .chain-optimism {
                 background: var(--ctp-red);
                 color: var(--ctp-base);
             }
             .chain-arbitrum {
-                background: var(--ctp-sky);
-                color: var(--ctp-base);
+                background: #28a0f0;
+                color: white;
             }
             .chain-scroll {
                 background: var(--ctp-peach);
@@ -372,14 +402,177 @@
                 background: var(--ctp-lavender);
                 color: var(--ctp-base);
             }
+            .chain-linea {
+                background: #61dfff;
+                color: var(--ctp-base);
+            }
+            .chain-taiko {
+                background: #e81899;
+                color: white;
+            }
+            .chain-blast {
+                background: #fcfc03;
+                color: black;
+            }
+            .chain-zora {
+                background: #5b5bd6;
+                color: white;
+            }
+            .chain-mode {
+                background: #dffe00;
+                color: black;
+            }
             .chain-other {
                 background: var(--ctp-surface1);
                 color: var(--ctp-text);
             }
 
+            /* Modal styles */
+            .modal-overlay {
+                display: none;
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                background: rgba(0, 0, 0, 0.7);
+                z-index: 1000;
+                justify-content: center;
+                align-items: center;
+                padding: 2rem;
+            }
+
+            .modal-overlay.open {
+                display: flex;
+            }
+
+            .modal {
+                background: var(--ctp-mantle);
+                border: 1px solid var(--ctp-surface0);
+                border-radius: 8px;
+                max-width: 700px;
+                width: 100%;
+                max-height: 90vh;
+                overflow-y: auto;
+            }
+
+            .modal-header {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                padding: 1rem 1.5rem;
+                border-bottom: 1px solid var(--ctp-surface0);
+            }
+
+            .modal-header h2 {
+                font-size: 1rem;
+                font-weight: 600;
+                color: var(--ctp-text);
+            }
+
+            .modal-close {
+                background: none;
+                border: none;
+                color: var(--ctp-subtext0);
+                cursor: pointer;
+                padding: 0.25rem;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+            }
+
+            .modal-close:hover {
+                color: var(--ctp-text);
+            }
+
+            .modal-body {
+                padding: 1.5rem;
+            }
+
+            .detail-grid {
+                display: grid;
+                grid-template-columns: repeat(2, 1fr);
+                gap: 1rem;
+            }
+
+            .detail-item {
+                padding: 0.75rem;
+                background: var(--ctp-crust);
+                border-radius: 6px;
+            }
+
+            .detail-item.full-width {
+                grid-column: 1 / -1;
+            }
+
+            .detail-label {
+                font-size: 0.7rem;
+                text-transform: uppercase;
+                letter-spacing: 0.05em;
+                color: var(--ctp-subtext0);
+                margin-bottom: 0.25rem;
+            }
+
+            .detail-value {
+                font-size: 0.9rem;
+                color: var(--ctp-text);
+                word-break: break-all;
+            }
+
+            .detail-value.highlight {
+                color: var(--ctp-blue);
+            }
+
+            .detail-value a {
+                color: var(--ctp-sapphire);
+                text-decoration: none;
+            }
+
+            .detail-value a:hover {
+                text-decoration: underline;
+            }
+
+            .tx-list {
+                margin-top: 1rem;
+            }
+
+            .tx-item {
+                background: var(--ctp-crust);
+                border-radius: 6px;
+                padding: 1rem;
+                margin-bottom: 0.5rem;
+            }
+
+            .tx-item:last-child {
+                margin-bottom: 0;
+            }
+
+            .tx-header {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                margin-bottom: 0.5rem;
+            }
+
+            .tx-hash {
+                font-family: "SF Mono", Monaco, monospace;
+                font-size: 0.8rem;
+                color: var(--ctp-sapphire);
+            }
+
+            .tx-details {
+                display: flex;
+                gap: 1rem;
+                font-size: 0.75rem;
+                color: var(--ctp-subtext0);
+            }
+
             @media (max-width: 768px) {
-                body {
-                    padding: 1rem;
+                .container {
+                    padding: 0 1rem 1rem;
+                }
+                header {
+                    padding: 0.75rem 1rem;
                 }
                 .charts-grid,
                 .tables-grid {
@@ -388,14 +581,29 @@
                 .stat-card .value {
                     font-size: 1.5rem;
                 }
+                .detail-grid {
+                    grid-template-columns: 1fr;
+                }
+                .header-subtitle {
+                    display: none;
+                }
             }
         </style>
     </head>
     <body>
-        <div class="container">
-            <header>
-                <h1>📦 Ex<span>Blob</span></h1>
-                <div style="display: flex; align-items: center; gap: 1.5rem">
+        <header>
+            <div class="header-content">
+                <div class="header-left">
+                    <span class="header-subtitle">
+                        Blob transaction explorer for
+                        <a
+                            href="https://eips.ethereum.org/EIPS/eip-4844"
+                            target="_blank"
+                            >EIP-4844</a
+                        >
+                    </span>
+                </div>
+                <div class="header-right">
                     <div class="time-picker">
                         <button class="time-picker-btn" id="time-picker-btn">
                             <svg
@@ -419,7 +627,7 @@
                                 stroke-width="2"
                                 stroke-linecap="round"
                                 stroke-linejoin="round"
-                                style="margin-left: 0.25rem"
+                                style="width: 12px; height: 12px"
                             >
                                 <polyline points="6 9 12 15 18 9"></polyline>
                             </svg>
@@ -494,12 +702,18 @@
                         <span id="last-update">Connecting...</span>
                     </div>
                 </div>
-            </header>
+            </div>
+        </header>
 
+        <div class="container">
             <div class="stats-grid">
                 <div class="stat-card">
                     <h3>Total Blobs</h3>
                     <div class="value teal" id="total-blobs">-</div>
+                </div>
+                <div class="stat-card">
+                    <h3>Total Blob Size</h3>
+                    <div class="value blue" id="total-blob-size">-</div>
                 </div>
                 <div class="stat-card">
                     <h3>Avg Blobs/Block</h3>
@@ -510,7 +724,7 @@
                     <div class="value green" id="latest-block">-</div>
                 </div>
                 <div class="stat-card">
-                    <h3>Avg Gas Price</h3>
+                    <h3>Blob Gas Price</h3>
                     <div class="value yellow" id="avg-gas">-</div>
                 </div>
             </div>
@@ -523,7 +737,7 @@
                     </div>
                 </div>
                 <div class="chart-card">
-                    <h2>Gas Price (Gwei)</h2>
+                    <h2>Blob Gas Price (Gwei)</h2>
                     <div class="chart-container">
                         <canvas id="gas-chart"></canvas>
                     </div>
@@ -548,6 +762,7 @@
                                     <th>Block</th>
                                     <th>Chain</th>
                                     <th>Blobs</th>
+                                    <th>Size</th>
                                     <th>Gas Price</th>
                                 </tr>
                             </thead>
@@ -565,7 +780,7 @@
                                     <th>Address</th>
                                     <th>Txs</th>
                                     <th>Blobs</th>
-                                    <th>Size</th>
+                                    <th>Total Size</th>
                                 </tr>
                             </thead>
                             <tbody id="senders-table"></tbody>
@@ -575,14 +790,16 @@
             </div>
 
             <div class="table-card" style="margin-top: 2rem">
-                <h2>Recent Blocks</h2>
+                <h2>Recent Blocks with Blobs</h2>
                 <div class="table-scroll">
                     <table>
                         <thead>
                             <tr>
                                 <th>Block</th>
+                                <th>Time</th>
                                 <th>Txs</th>
                                 <th>Blobs</th>
+                                <th>Blob Size</th>
                                 <th>Gas Price</th>
                             </tr>
                         </thead>
@@ -592,10 +809,40 @@
             </div>
         </div>
 
+        <!-- Block Detail Modal -->
+        <div class="modal-overlay" id="block-modal">
+            <div class="modal">
+                <div class="modal-header">
+                    <h2>Block Details</h2>
+                    <button class="modal-close" id="modal-close">
+                        <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            width="20"
+                            height="20"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            stroke-width="2"
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                        >
+                            <line x1="18" y1="6" x2="6" y2="18"></line>
+                            <line x1="6" y1="6" x2="18" y2="18"></line>
+                        </svg>
+                    </button>
+                </div>
+                <div class="modal-body" id="modal-body">
+                    <!-- Content filled by JS -->
+                </div>
+            </div>
+        </div>
+
         <script>
             const POLL_INTERVAL = 3000;
+            const BLOB_SIZE_BYTES = 131072; // 128 KiB per blob
             let blobsChart, gasChart, chainChart;
             let selectedHours = 1;
+            let blocksData = [];
 
             const chartOptions = {
                 responsive: true,
@@ -708,7 +955,6 @@
                     },
                 });
 
-                // Initialize chain chart
                 const chainCtx = document
                     .getElementById("chain-chart")
                     .getContext("2d");
@@ -721,12 +967,14 @@
                                 label: "Blobs",
                                 data: [],
                                 backgroundColor: [
-                                    "#89b4fa",
+                                    "#0052ff",
                                     "#f38ba8",
-                                    "#89dceb",
+                                    "#28a0f0",
                                     "#fab387",
                                     "#cba6f7",
                                     "#b4befe",
+                                    "#61dfff",
+                                    "#e81899",
                                     "#585b70",
                                 ],
                             },
@@ -778,19 +1026,40 @@
             }
 
             function formatGwei(wei) {
-                return (wei / 1e9).toFixed(2) + " Gwei";
+                const gwei = wei / 1e9;
+                if (gwei < 0.0001) {
+                    return gwei.toExponential(2) + " Gwei";
+                }
+                return gwei.toFixed(4) + " Gwei";
             }
 
             function formatBytes(bytes) {
                 if (bytes === 0) return "0 B";
                 const k = 1024;
-                const sizes = ["B", "KB", "MB", "GB", "TB"];
+                const sizes = ["B", "KiB", "MiB", "GiB", "TiB"];
                 const i = Math.floor(Math.log(bytes) / Math.log(k));
                 return (
                     parseFloat((bytes / Math.pow(k, i)).toFixed(2)) +
                     " " +
                     sizes[i]
                 );
+            }
+
+            function formatTimeAgo(timestamp) {
+                const now = Math.floor(Date.now() / 1000);
+                const diff = now - timestamp;
+                if (diff < 60) return `${diff}s ago`;
+                if (diff < 3600) return `${Math.floor(diff / 60)}m ago`;
+                if (diff < 86400) return `${Math.floor(diff / 3600)}h ago`;
+                return `${Math.floor(diff / 86400)}d ago`;
+            }
+
+            function formatTimestamp(timestamp) {
+                return new Date(timestamp * 1000).toLocaleString();
+            }
+
+            function truncateHash(hash) {
+                return hash.slice(0, 10) + "..." + hash.slice(-8);
             }
 
             function truncateAddress(addr) {
@@ -805,7 +1074,79 @@
                 if (normalized.includes("scroll")) return "chain-scroll";
                 if (normalized.includes("starknet")) return "chain-starknet";
                 if (normalized.includes("zksync")) return "chain-zksync";
+                if (normalized.includes("linea")) return "chain-linea";
+                if (normalized.includes("taiko")) return "chain-taiko";
+                if (normalized.includes("blast")) return "chain-blast";
+                if (normalized.includes("zora")) return "chain-zora";
+                if (normalized.includes("mode")) return "chain-mode";
                 return "chain-other";
+            }
+
+            // Calculate slot from block number (approximation: slot = block after merge adjustment)
+            function getSlotFromBlock(blockNumber) {
+                // Merge happened at block 15537393, slot 4700013
+                const mergeBlock = 15537393;
+                const mergeSlot = 4700013;
+                return mergeSlot + (blockNumber - mergeBlock);
+            }
+
+            function showBlockModal(block) {
+                const modal = document.getElementById("block-modal");
+                const modalBody = document.getElementById("modal-body");
+                const slot = getSlotFromBlock(block.block_number);
+
+                modalBody.innerHTML = `
+                    <div class="detail-grid">
+                        <div class="detail-item">
+                            <div class="detail-label">Block Height</div>
+                            <div class="detail-value highlight">${formatNumber(block.block_number)}</div>
+                        </div>
+                        <div class="detail-item">
+                            <div class="detail-label">Slot</div>
+                            <div class="detail-value">
+                                <a href="https://lab.ethpandaops.io/ethereum/slots/${slot}" target="_blank">${formatNumber(slot)}</a>
+                            </div>
+                        </div>
+                        <div class="detail-item full-width">
+                            <div class="detail-label">Timestamp</div>
+                            <div class="detail-value">${formatTimeAgo(block.block_timestamp)} (${formatTimestamp(block.block_timestamp)})</div>
+                        </div>
+                        <div class="detail-item">
+                            <div class="detail-label">Blob Transactions</div>
+                            <div class="detail-value">${block.tx_count}</div>
+                        </div>
+                        <div class="detail-item">
+                            <div class="detail-label">Total Blobs</div>
+                            <div class="detail-value">${block.total_blobs}</div>
+                        </div>
+                        <div class="detail-item">
+                            <div class="detail-label">Blob Size</div>
+                            <div class="detail-value">${formatBytes(block.total_blob_size)} (${block.total_blobs} blobs)</div>
+                        </div>
+                        <div class="detail-item">
+                            <div class="detail-label">Blob Gas Used</div>
+                            <div class="detail-value">${formatNumber(block.gas_used)}</div>
+                        </div>
+                        <div class="detail-item">
+                            <div class="detail-label">Blob Gas Price</div>
+                            <div class="detail-value">${formatGwei(block.gas_price)}</div>
+                        </div>
+                        <div class="detail-item">
+                            <div class="detail-label">Max Blobs per Block</div>
+                            <div class="detail-value">6 (EIP-4844 limit)</div>
+                        </div>
+                    </div>
+                    <div style="margin-top: 1rem; text-align: center;">
+                        <a href="https://etherscan.io/block/${block.block_number}" target="_blank" style="color: var(--ctp-sapphire); font-size: 0.85rem;">
+                            View on Etherscan
+                        </a>
+                    </div>
+                `;
+                modal.classList.add("open");
+            }
+
+            function closeModal() {
+                document.getElementById("block-modal").classList.remove("open");
             }
 
             async function fetchStats() {
@@ -815,6 +1156,8 @@
 
                     document.getElementById("total-blobs").textContent =
                         formatNumber(data.total_blobs);
+                    document.getElementById("total-blob-size").textContent =
+                        formatBytes(data.total_blobs * BLOB_SIZE_BYTES);
                     document.getElementById("avg-blobs").textContent =
                         data.avg_blobs_per_block.toFixed(2);
                     document.getElementById("latest-block").textContent =
@@ -832,21 +1175,31 @@
             async function fetchBlocks() {
                 try {
                     const res = await fetch("/api/blocks");
-                    const blocks = await res.json();
+                    blocksData = await res.json();
 
                     const tbody = document.getElementById("blocks-table");
-                    tbody.innerHTML = blocks
+                    tbody.innerHTML = blocksData
                         .map(
-                            (b) => `
-                    <tr>
-                        <td class="number">${formatNumber(b.block_number)}</td>
-                        <td>${b.tx_count}</td>
-                        <td>${b.total_blobs}</td>
-                        <td>${formatGwei(b.gas_price)}</td>
-                    </tr>
-                `,
+                            (b, idx) => `
+                            <tr class="clickable" data-block-idx="${idx}">
+                                <td class="number">${formatNumber(b.block_number)}</td>
+                                <td>${formatTimeAgo(b.block_timestamp)}</td>
+                                <td>${b.tx_count}</td>
+                                <td>${b.total_blobs}</td>
+                                <td>${formatBytes(b.total_blob_size)}</td>
+                                <td>${formatGwei(b.gas_price)}</td>
+                            </tr>
+                        `,
                         )
                         .join("");
+
+                    // Add click handlers
+                    tbody.querySelectorAll("tr.clickable").forEach((row) => {
+                        row.addEventListener("click", () => {
+                            const idx = parseInt(row.dataset.blockIdx);
+                            showBlockModal(blocksData[idx]);
+                        });
+                    });
                 } catch (e) {
                     console.error("Failed to fetch blocks:", e);
                 }
@@ -861,14 +1214,14 @@
                     tbody.innerHTML = senders
                         .map(
                             (s) => `
-                    <tr>
-                        <td><span class="chain-badge ${getChainBadgeClass(s.chain)}">${s.chain}</span></td>
-                        <td class="address" title="${s.address}">${truncateAddress(s.address)}</td>
-                        <td>${formatNumber(s.tx_count)}</td>
-                        <td>${formatNumber(s.total_blobs)}</td>
-                        <td>${formatBytes(s.total_blob_size)}</td>
-                    </tr>
-                `,
+                            <tr>
+                                <td><span class="chain-badge ${getChainBadgeClass(s.chain)}">${s.chain}</span></td>
+                                <td class="address" title="${s.address}">${truncateAddress(s.address)}</td>
+                                <td>${formatNumber(s.tx_count)}</td>
+                                <td>${formatNumber(s.total_blobs)}</td>
+                                <td>${formatBytes(s.total_blob_size)}</td>
+                            </tr>
+                        `,
                         )
                         .join("");
                 } catch (e) {
@@ -921,14 +1274,15 @@
                     tbody.innerHTML = txs
                         .map(
                             (tx) => `
-                    <tr>
-                        <td class="address" title="${tx.tx_hash}">${truncateAddress(tx.tx_hash)}</td>
-                        <td class="number">${formatNumber(tx.block_number)}</td>
-                        <td><span class="chain-badge ${getChainBadgeClass(tx.chain)}">${tx.chain}</span></td>
-                        <td>${tx.blob_count}</td>
-                        <td>${formatGwei(tx.gas_price)}</td>
-                    </tr>
-                `,
+                            <tr>
+                                <td class="address" title="${tx.tx_hash}">${truncateHash(tx.tx_hash)}</td>
+                                <td class="number">${formatNumber(tx.block_number)}</td>
+                                <td><span class="chain-badge ${getChainBadgeClass(tx.chain)}">${tx.chain}</span></td>
+                                <td>${tx.blob_count}</td>
+                                <td>${formatBytes(tx.blob_size)}</td>
+                                <td>${formatGwei(tx.gas_price)}</td>
+                            </tr>
+                        `,
                         )
                         .join("");
                 } catch (e) {
@@ -993,6 +1347,19 @@
                     fetchChartData();
                     fetchChainStats();
                 });
+            });
+
+            // Modal close handlers
+            document
+                .getElementById("modal-close")
+                .addEventListener("click", closeModal);
+            document
+                .getElementById("block-modal")
+                .addEventListener("click", (e) => {
+                    if (e.target === e.currentTarget) closeModal();
+                });
+            document.addEventListener("keydown", (e) => {
+                if (e.key === "Escape") closeModal();
             });
 
             initCharts();
