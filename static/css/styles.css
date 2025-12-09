@@ -29,7 +29,9 @@
 }
 
 body {
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, sans-serif;
+    font-family:
+        -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu,
+        sans-serif;
     background: var(--ctp-base);
     color: var(--ctp-text);
     line-height: 1.6;
@@ -68,15 +70,19 @@ header {
 }
 
 .logo {
-    font-family: "SF Mono", Monaco, "Cascadia Code", "Roboto Mono", monospace;
-    font-size: 1.5rem;
-    font-weight: 800;
-    letter-spacing: -0.5px;
-    color: var(--ctp-text);
-}
-
-.logo span {
-    color: var(--ctp-peach);
+    font-family: "Space Grotesk", sans-serif;
+    font-size: 1.6rem;
+    font-weight: 700;
+    letter-spacing: 2px;
+    background: linear-gradient(
+        135deg,
+        var(--ctp-mauve) 0%,
+        var(--ctp-pink) 50%,
+        var(--ctp-peach) 100%
+    );
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
 }
 
 .header-subtitle {
@@ -119,8 +125,13 @@ header {
 }
 
 @keyframes pulse {
-    0%, 100% { opacity: 1; }
-    50% { opacity: 0.5; }
+    0%,
+    100% {
+        opacity: 1;
+    }
+    50% {
+        opacity: 0.5;
+    }
 }
 
 /* Time picker */
@@ -240,12 +251,24 @@ header {
     font-variant-numeric: tabular-nums;
 }
 
-.stat-card .value.blue { color: var(--ctp-blue); }
-.stat-card .value.teal { color: var(--ctp-teal); }
-.stat-card .value.peach { color: var(--ctp-peach); }
-.stat-card .value.mauve { color: var(--ctp-mauve); }
-.stat-card .value.green { color: var(--ctp-green); }
-.stat-card .value.yellow { color: var(--ctp-yellow); }
+.stat-card .value.blue {
+    color: var(--ctp-blue);
+}
+.stat-card .value.teal {
+    color: var(--ctp-teal);
+}
+.stat-card .value.peach {
+    color: var(--ctp-peach);
+}
+.stat-card .value.mauve {
+    color: var(--ctp-mauve);
+}
+.stat-card .value.green {
+    color: var(--ctp-green);
+}
+.stat-card .value.yellow {
+    color: var(--ctp-yellow);
+}
 
 /* Charts */
 .charts-grid {
@@ -301,7 +324,8 @@ table {
     border-collapse: collapse;
 }
 
-th, td {
+th,
+td {
     padding: 0.75rem 1rem;
     text-align: left;
     border-bottom: 1px solid var(--ctp-surface0);
@@ -370,18 +394,54 @@ tr.clickable {
     font-weight: 500;
 }
 
-.chain-base { background: #0052ff; color: white; }
-.chain-optimism { background: var(--ctp-red); color: var(--ctp-base); }
-.chain-arbitrum { background: #28a0f0; color: white; }
-.chain-scroll { background: var(--ctp-peach); color: var(--ctp-base); }
-.chain-starknet { background: var(--ctp-mauve); color: var(--ctp-base); }
-.chain-zksync { background: var(--ctp-lavender); color: var(--ctp-base); }
-.chain-linea { background: #61dfff; color: var(--ctp-base); }
-.chain-taiko { background: #e81899; color: white; }
-.chain-blast { background: #fcfc03; color: black; }
-.chain-zora { background: #5b5bd6; color: white; }
-.chain-mode { background: #dffe00; color: black; }
-.chain-other { background: var(--ctp-surface1); color: var(--ctp-text); }
+.chain-base {
+    background: #0052ff;
+    color: white;
+}
+.chain-optimism {
+    background: var(--ctp-red);
+    color: var(--ctp-base);
+}
+.chain-arbitrum {
+    background: #28a0f0;
+    color: white;
+}
+.chain-scroll {
+    background: var(--ctp-peach);
+    color: var(--ctp-base);
+}
+.chain-starknet {
+    background: var(--ctp-mauve);
+    color: var(--ctp-base);
+}
+.chain-zksync {
+    background: var(--ctp-lavender);
+    color: var(--ctp-base);
+}
+.chain-linea {
+    background: #61dfff;
+    color: var(--ctp-base);
+}
+.chain-taiko {
+    background: #e81899;
+    color: white;
+}
+.chain-blast {
+    background: #fcfc03;
+    color: black;
+}
+.chain-zora {
+    background: #5b5bd6;
+    color: white;
+}
+.chain-mode {
+    background: #dffe00;
+    color: black;
+}
+.chain-other {
+    background: var(--ctp-surface1);
+    color: var(--ctp-text);
+}
 
 /* Modal */
 .modal-overlay {
@@ -496,7 +556,8 @@ tr.clickable {
     header {
         padding: 0.75rem 1rem;
     }
-    .charts-grid, .tables-grid {
+    .charts-grid,
+    .tables-grid {
         grid-template-columns: 1fr;
     }
     .stat-card .value {
