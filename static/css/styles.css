@@ -548,6 +548,49 @@ tr.clickable {
     text-decoration: underline;
 }
 
+/* Transaction list in modal */
+.tx-list {
+    margin-top: 1.5rem;
+    padding-top: 1rem;
+    border-top: 1px solid var(--ctp-surface0);
+}
+
+.tx-item {
+    background: var(--ctp-crust);
+    border-radius: 6px;
+    padding: 0.75rem 1rem;
+    margin-bottom: 0.5rem;
+}
+
+.tx-item:last-child {
+    margin-bottom: 0;
+}
+
+.tx-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.4rem;
+}
+
+.tx-hash {
+    font-family: "SF Mono", Monaco, "Cascadia Code", monospace;
+    font-size: 0.8rem;
+    color: var(--ctp-sapphire);
+    text-decoration: none;
+}
+
+.tx-hash:hover {
+    text-decoration: underline;
+}
+
+.tx-details {
+    display: flex;
+    gap: 1rem;
+    font-size: 0.75rem;
+    color: var(--ctp-subtext0);
+}
+
 /* Responsive */
 @media (max-width: 768px) {
     .container {

@@ -26,6 +26,15 @@ struct Stats {
 }
 
 #[derive(Serialize)]
+struct BlockTransaction {
+    tx_hash: String,
+    sender: String,
+    blob_count: u64,
+    blob_size: u64,
+    chain: String,
+}
+
+#[derive(Serialize)]
 struct Block {
     block_number: u64,
     block_timestamp: u64,
@@ -34,6 +43,7 @@ struct Block {
     total_blob_size: u64,
     gas_used: u64,
     gas_price: u64,
+    transactions: Vec<BlockTransaction>,
 }
 
 #[derive(Serialize)]
@@ -224,21 +234,62 @@ async fn get_recent_blocks(State(db_path): State<DbPath>) -> Json<Vec<Block>> {
         )
         .unwrap();
 
-    let blocks: Vec<Block> = stmt
+    let block_data: Vec<(u64, u64, u64, u64, u64, u64)> = stmt
         .query_map([], |row| {
-            let total_blobs: u64 = row.get(3)?;
-            Ok(Block {
-                block_number: row.get(0)?,
-                block_timestamp: row.get(1)?,
-                tx_count: row.get(2)?,
-                total_blobs,
-                total_blob_size: total_blobs * BLOB_SIZE_BYTES,
-                gas_used: row.get(4)?,
-                gas_price: row.get(5)?,
-            })
+            Ok((
+                row.get(0)?,
+                row.get(1)?,
+                row.get(2)?,
+                row.get(3)?,
+                row.get(4)?,
+                row.get(5)?,
+            ))
         })
         .unwrap()
         .filter_map(|r| r.ok())
+        .collect();
+
+    let blocks: Vec<Block> = block_data
+        .into_iter()
+        .map(|(block_number, block_timestamp, tx_count, total_blobs, gas_used, gas_price)| {
+            // Fetch transactions for this block
+            let mut tx_stmt = conn
+                .prepare(
+                    "SELECT tx_hash, sender, blob_count FROM blob_transactions WHERE block_number = ?",
+                )
+                .unwrap();
+
+            let transactions: Vec<BlockTransaction> = tx_stmt
+                .query_map([block_number], |row| {
+                    let sender: String = row.get(1)?;
+                    let blob_count: u64 = row.get(2)?;
+                    Ok((row.get::<_, String>(0)?, sender, blob_count))
+                })
+                .unwrap()
+                .filter_map(|r| r.ok())
+                .map(|(tx_hash, sender, blob_count)| {
+                    let chain = identify_chain(&sender);
+                    BlockTransaction {
+                        tx_hash,
+                        sender,
+                        blob_count,
+                        blob_size: blob_count * BLOB_SIZE_BYTES,
+                        chain,
+                    }
+                })
+                .collect();
+
+            Block {
+                block_number,
+                block_timestamp,
+                tx_count,
+                total_blobs,
+                total_blob_size: total_blobs * BLOB_SIZE_BYTES,
+                gas_used,
+                gas_price,
+                transactions,
+            }
+        })
         .collect();
 
     Json(blocks)

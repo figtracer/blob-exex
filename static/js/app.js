@@ -251,6 +251,26 @@ function showBlockModal(block) {
   const modalBody = document.getElementById("modal-body");
   const slot = getSlotFromBlock(block.block_number);
 
+  const txList =
+    block.transactions && block.transactions.length > 0
+      ? block.transactions
+          .map(
+            (tx) => `
+        <div class="tx-item">
+            <div class="tx-header">
+                <a href="https://etherscan.io/tx/${tx.tx_hash}" target="_blank" class="tx-hash">${truncateHash(tx.tx_hash)}</a>
+                <span class="chain-badge ${getChainBadgeClass(tx.chain)}">${tx.chain}</span>
+            </div>
+            <div class="tx-details">
+                <span>${tx.blob_count} blob${tx.blob_count > 1 ? "s" : ""}</span>
+                <span>${formatBytes(tx.blob_size)}</span>
+            </div>
+        </div>
+    `,
+          )
+          .join("")
+      : '<div class="tx-item"><div class="tx-details">No transactions found</div></div>';
+
   modalBody.innerHTML = `
         <div class="detail-grid">
             <div class="detail-item">
@@ -290,6 +310,12 @@ function showBlockModal(block) {
                 <div class="detail-value">${formatGwei(block.gas_price)}</div>
             </div>
         </div>
+
+        <div class="tx-list">
+            <h3 style="font-size: 0.85rem; color: var(--ctp-subtext1); margin-bottom: 0.75rem;">Blob Transactions (${block.tx_count})</h3>
+            ${txList}
+        </div>
+
         <div style="margin-top: 1rem; text-align: center;">
             <a href="https://etherscan.io/block/${block.block_number}" target="_blank" style="color: var(--ctp-sapphire); font-size: 0.85rem;">
                 View on Etherscan
