@@ -51,30 +51,35 @@ const chartOptions = {
 function initCharts() {
   const blobsCtx = document.getElementById("blobs-chart").getContext("2d");
   blobsChart = new Chart(blobsCtx, {
-    type: "line",
+    type: "bar",
     data: {
       labels: [],
       datasets: [
         {
           data: [],
+          backgroundColor: "rgba(148, 226, 213, 0.7)",
           borderColor: "#94e2d5",
-          backgroundColor: "rgba(148, 226, 213, 0.1)",
-          fill: true,
-          borderWidth: 2,
+          borderWidth: 0,
+          borderRadius: 1,
+          barPercentage: 1.0,
+          categoryPercentage: 1.0,
         },
       ],
     },
     options: {
       ...chartOptions,
       scales: {
-        ...chartOptions.scales,
+        x: {
+          display: false,
+          grid: { display: false },
+        },
         y: {
           ...chartOptions.scales.y,
           beginAtZero: true,
-          suggestedMax: 10,
+          max: 9,
           ticks: {
             ...chartOptions.scales.y.ticks,
-            stepSize: 1,
+            stepSize: 3,
             precision: 0,
           },
         },
@@ -91,9 +96,11 @@ function initCharts() {
         {
           data: [],
           borderColor: "#f9e2af",
-          backgroundColor: "rgba(249, 226, 175, 0.1)",
+          backgroundColor: "rgba(249, 226, 175, 0.2)",
           fill: true,
-          borderWidth: 2,
+          borderWidth: 1.5,
+          tension: 0.4,
+          pointRadius: 0,
         },
       ],
     },
