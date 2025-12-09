@@ -18,17 +18,8 @@ const chartOptions = {
   plugins: {
     legend: { display: false },
     tooltip: {
-      enabled: true,
-      backgroundColor: "#1e1e2e",
-      borderColor: "#45475a",
-      borderWidth: 1,
-      titleColor: "#cdd6f4",
-      bodyColor: "#a6adc8",
-      padding: 10,
-      displayColors: false,
-      callbacks: {
-        title: (ctx) => `Block ${ctx[0].label}`,
-      },
+      enabled: false,
+      external: customTooltip,
     },
   },
   scales: {
@@ -46,6 +37,61 @@ const chartOptions = {
     line: { tension: 0.3 },
   },
 };
+
+// Custom tooltip function that follows mouse
+function customTooltip(context) {
+  let tooltipEl = document.getElementById("chartjs-tooltip");
+
+  if (!tooltipEl) {
+    tooltipEl = document.createElement("div");
+    tooltipEl.id = "chartjs-tooltip";
+    tooltipEl.style.background = "#1e1e2e";
+    tooltipEl.style.borderRadius = "4px";
+    tooltipEl.style.color = "#cdd6f4";
+    tooltipEl.style.opacity = 1;
+    tooltipEl.style.pointerEvents = "none";
+    tooltipEl.style.position = "absolute";
+    tooltipEl.style.transform = "translate(-50%, -120%)";
+    tooltipEl.style.transition = "opacity 0.1s ease";
+    tooltipEl.style.border = "1px solid #45475a";
+    tooltipEl.style.padding = "8px 12px";
+    tooltipEl.style.fontSize = "0.8rem";
+    tooltipEl.style.zIndex = "1000";
+    tooltipEl.style.whiteSpace = "nowrap";
+    document.body.appendChild(tooltipEl);
+  }
+
+  const tooltipModel = context.tooltip;
+  if (tooltipModel.opacity === 0) {
+    tooltipEl.style.opacity = 0;
+    return;
+  }
+
+  if (tooltipModel.body) {
+    const titleLines = tooltipModel.title || [];
+    const bodyLines = tooltipModel.body.map((b) => b.lines);
+
+    let innerHtml = "<div>";
+
+    titleLines.forEach((title) => {
+      innerHtml += `<div style="color: #a6adc8; margin-bottom: 4px; font-size: 0.75rem;">${title}</div>`;
+    });
+
+    bodyLines.forEach((body, i) => {
+      innerHtml += `<div style="font-weight: 600;">${body}</div>`;
+    });
+
+    innerHtml += "</div>";
+    tooltipEl.innerHTML = innerHtml;
+  }
+
+  const position = context.chart.canvas.getBoundingClientRect();
+  tooltipEl.style.opacity = 1;
+  tooltipEl.style.left =
+    position.left + window.pageXOffset + tooltipModel.caretX + "px";
+  tooltipEl.style.top =
+    position.top + window.pageYOffset + tooltipModel.caretY + "px";
+}
 
 // Initialize charts
 function initCharts() {
@@ -68,6 +114,26 @@ function initCharts() {
     },
     options: {
       ...chartOptions,
+      plugins: {
+        ...chartOptions.plugins,
+        tooltip: {
+          enabled: false,
+          external: (context) => {
+            customTooltip(context);
+            const tooltipEl = document.getElementById("chartjs-tooltip");
+            if (tooltipEl && context.tooltip.body) {
+              const bodyLines = context.tooltip.dataPoints.map(
+                (dp) => `${dp.parsed.y} blobs`,
+              );
+              const title = `Block ${context.tooltip.title[0]}`;
+              tooltipEl.innerHTML = `
+                <div style="color: #a6adc8; margin-bottom: 4px; font-size: 0.75rem;">${title}</div>
+                <div style="font-weight: 600;">${bodyLines[0]}</div>
+              `;
+            }
+          },
+        },
+      },
       scales: {
         x: {
           display: false,
@@ -107,10 +173,20 @@ function initCharts() {
       plugins: {
         ...chartOptions.plugins,
         tooltip: {
-          ...chartOptions.plugins.tooltip,
-          callbacks: {
-            title: (ctx) => `Block ${ctx[0].label}`,
-            label: (ctx) => `${ctx.parsed.y.toFixed(4)} Gwei`,
+          enabled: false,
+          external: (context) => {
+            customTooltip(context);
+            const tooltipEl = document.getElementById("chartjs-tooltip");
+            if (tooltipEl && context.tooltip.body) {
+              const bodyLines = context.tooltip.dataPoints.map(
+                (dp) => `${dp.parsed.y.toFixed(4)} Gwei`,
+              );
+              const title = `Block ${context.tooltip.title[0]}`;
+              tooltipEl.innerHTML = `
+                <div style="color: #a6adc8; margin-bottom: 4px; font-size: 0.75rem;">${title}</div>
+                <div style="font-weight: 600;">${bodyLines[0]}</div>
+              `;
+            }
           },
         },
       },

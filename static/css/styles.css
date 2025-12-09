@@ -245,7 +245,7 @@ header {
 }
 
 .stat-card .value {
-    font-size: 1.75rem;
+    font-size: 1.4rem;
     font-weight: 600;
     color: var(--ctp-text);
     font-variant-numeric: tabular-nums;
@@ -268,11 +268,6 @@ header {
 }
 .stat-card .value.yellow {
     color: var(--ctp-yellow);
-}
-
-/* Make Blob Gas Price stat smaller to match other stat card heights */
-#avg-gas {
-    font-size: 1.4rem;
 }
 
 /* Charts */
@@ -610,7 +605,7 @@ tr.clickable {
         grid-template-columns: 1fr;
     }
     .stat-card .value {
-        font-size: 1.5rem;
+        font-size: 1.2rem;
     }
     .detail-grid {
         grid-template-columns: 1fr;
