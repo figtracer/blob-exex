@@ -254,6 +254,77 @@
                 background: var(--ctp-surface2);
             }
 
+            .time-selector {
+                display: flex;
+                gap: 0.5rem;
+                margin-bottom: 2rem;
+                justify-content: center;
+                padding: 1rem;
+                background: var(--ctp-mantle);
+                border: 1px solid var(--ctp-surface0);
+                border-radius: 8px;
+            }
+
+            .time-btn {
+                padding: 0.5rem 1.5rem;
+                background: var(--ctp-surface0);
+                border: 1px solid var(--ctp-surface1);
+                border-radius: 6px;
+                color: var(--ctp-text);
+                font-size: 0.875rem;
+                font-weight: 500;
+                cursor: pointer;
+                transition: all 0.2s ease;
+            }
+
+            .time-btn:hover {
+                background: var(--ctp-surface1);
+                border-color: var(--ctp-surface2);
+            }
+
+            .time-btn.active {
+                background: var(--ctp-blue);
+                border-color: var(--ctp-blue);
+                color: var(--ctp-base);
+            }
+
+            .chain-badge {
+                display: inline-block;
+                padding: 0.25rem 0.5rem;
+                border-radius: 4px;
+                font-size: 0.75rem;
+                font-weight: 500;
+            }
+
+            .chain-base {
+                background: var(--ctp-blue);
+                color: var(--ctp-base);
+            }
+            .chain-optimism {
+                background: var(--ctp-red);
+                color: var(--ctp-base);
+            }
+            .chain-arbitrum {
+                background: var(--ctp-sky);
+                color: var(--ctp-base);
+            }
+            .chain-scroll {
+                background: var(--ctp-peach);
+                color: var(--ctp-base);
+            }
+            .chain-starknet {
+                background: var(--ctp-mauve);
+                color: var(--ctp-base);
+            }
+            .chain-zksync {
+                background: var(--ctp-lavender);
+                color: var(--ctp-base);
+            }
+            .chain-other {
+                background: var(--ctp-surface1);
+                color: var(--ctp-text);
+            }
+
             @media (max-width: 768px) {
                 body {
                     padding: 1rem;
@@ -305,6 +376,14 @@
                 </div>
             </div>
 
+            <div class="time-selector">
+                <button class="time-btn active" data-hours="1">1H</button>
+                <button class="time-btn" data-hours="6">6H</button>
+                <button class="time-btn" data-hours="12">12H</button>
+                <button class="time-btn" data-hours="24">24H</button>
+                <button class="time-btn" data-hours="48">48H</button>
+            </div>
+
             <div class="charts-grid">
                 <div class="chart-card">
                     <h2>Blobs per Block</h2>
@@ -320,20 +399,28 @@
                 </div>
             </div>
 
+            <div class="chart-card" style="margin-bottom: 2rem">
+                <h2>Blobs by Chain</h2>
+                <div class="chart-container" style="height: 300px">
+                    <canvas id="chain-chart"></canvas>
+                </div>
+            </div>
+
             <div class="tables-grid">
                 <div class="table-card">
-                    <h2>Recent Blocks</h2>
+                    <h2>Latest Blob Transactions</h2>
                     <div class="table-scroll">
                         <table>
                             <thead>
                                 <tr>
+                                    <th>Tx Hash</th>
                                     <th>Block</th>
-                                    <th>Txs</th>
+                                    <th>Chain</th>
                                     <th>Blobs</th>
                                     <th>Gas Price</th>
                                 </tr>
                             </thead>
-                            <tbody id="blocks-table"></tbody>
+                            <tbody id="blob-txs-table"></tbody>
                         </table>
                     </div>
                 </div>
@@ -353,11 +440,29 @@
                     </div>
                 </div>
             </div>
+
+            <div class="table-card" style="margin-top: 2rem">
+                <h2>Recent Blocks</h2>
+                <div class="table-scroll">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Block</th>
+                                <th>Txs</th>
+                                <th>Blobs</th>
+                                <th>Gas Price</th>
+                            </tr>
+                        </thead>
+                        <tbody id="blocks-table"></tbody>
+                    </table>
+                </div>
+            </div>
         </div>
 
         <script>
             const POLL_INTERVAL = 3000;
-            let blobsChart, gasChart;
+            let blobsChart, gasChart, chainChart;
+            let selectedHours = 1;
 
             const chartOptions = {
                 responsive: true,
@@ -469,6 +574,70 @@
                         },
                     },
                 });
+
+                // Initialize chain chart
+                const chainCtx = document
+                    .getElementById("chain-chart")
+                    .getContext("2d");
+                chainChart = new Chart(chainCtx, {
+                    type: "bar",
+                    data: {
+                        labels: [],
+                        datasets: [
+                            {
+                                label: "Blobs",
+                                data: [],
+                                backgroundColor: [
+                                    "#89b4fa",
+                                    "#f38ba8",
+                                    "#89dceb",
+                                    "#fab387",
+                                    "#cba6f7",
+                                    "#b4befe",
+                                    "#585b70",
+                                ],
+                            },
+                        ],
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: { display: false },
+                            tooltip: {
+                                enabled: true,
+                                backgroundColor: "#1e1e2e",
+                                borderColor: "#45475a",
+                                borderWidth: 1,
+                                titleColor: "#cdd6f4",
+                                bodyColor: "#a6adc8",
+                                padding: 10,
+                                callbacks: {
+                                    label: (ctx) => {
+                                        const percentage = ctx.raw.toFixed(2);
+                                        return `${ctx.label}: ${percentage}%`;
+                                    },
+                                },
+                            },
+                        },
+                        scales: {
+                            x: {
+                                grid: { display: false },
+                                ticks: { color: "#a6adc8" },
+                            },
+                            y: {
+                                grid: { color: "#313244" },
+                                ticks: {
+                                    color: "#a6adc8",
+                                    callback: function (value) {
+                                        return value + "%";
+                                    },
+                                },
+                                beginAtZero: true,
+                            },
+                        },
+                    },
+                });
             }
 
             function formatNumber(n) {
@@ -481,6 +650,17 @@
 
             function truncateAddress(addr) {
                 return addr.slice(0, 10) + "..." + addr.slice(-8);
+            }
+
+            function getChainBadgeClass(chain) {
+                const normalized = chain.toLowerCase().replace(/\s+/g, "");
+                if (normalized.includes("base")) return "chain-base";
+                if (normalized.includes("optimism")) return "chain-optimism";
+                if (normalized.includes("arbitrum")) return "chain-arbitrum";
+                if (normalized.includes("scroll")) return "chain-scroll";
+                if (normalized.includes("starknet")) return "chain-starknet";
+                if (normalized.includes("zksync")) return "chain-zksync";
+                return "chain-other";
             }
 
             async function fetchStats() {
@@ -555,7 +735,9 @@
 
             async function fetchChartData() {
                 try {
-                    const res = await fetch("/api/chart");
+                    const res = await fetch(
+                        `/api/chart?hours=${selectedHours}`,
+                    );
                     const data = await res.json();
 
                     blobsChart.data.labels = data.labels;
@@ -567,6 +749,47 @@
                     gasChart.update("none");
                 } catch (e) {
                     console.error("Failed to fetch chart data:", e);
+                }
+            }
+
+            async function fetchChainStats() {
+                try {
+                    const res = await fetch(
+                        `/api/chain-stats?hours=${selectedHours}`,
+                    );
+                    const data = await res.json();
+
+                    chainChart.data.labels = data.map((d) => d.chain);
+                    chainChart.data.datasets[0].data = data.map(
+                        (d) => d.percentage,
+                    );
+                    chainChart.update("none");
+                } catch (e) {
+                    console.error("Failed to fetch chain stats:", e);
+                }
+            }
+
+            async function fetchBlobTransactions() {
+                try {
+                    const res = await fetch("/api/blob-transactions");
+                    const txs = await res.json();
+
+                    const tbody = document.getElementById("blob-txs-table");
+                    tbody.innerHTML = txs
+                        .map(
+                            (tx) => `
+                    <tr>
+                        <td class="address" title="${tx.tx_hash}">${truncateAddress(tx.tx_hash)}</td>
+                        <td class="number">${formatNumber(tx.block_number)}</td>
+                        <td><span class="chain-badge ${getChainBadgeClass(tx.chain)}">${tx.chain}</span></td>
+                        <td>${tx.blob_count}</td>
+                        <td>${formatGwei(tx.gas_price)}</td>
+                    </tr>
+                `,
+                        )
+                        .join("");
+                } catch (e) {
+                    console.error("Failed to fetch blob transactions:", e);
                 }
             }
 
@@ -582,9 +805,24 @@
                     fetchBlocks(),
                     fetchSenders(),
                     fetchChartData(),
+                    fetchChainStats(),
+                    fetchBlobTransactions(),
                 ]);
                 updateTimestamp();
             }
+
+            // Time selector functionality
+            document.querySelectorAll(".time-btn").forEach((btn) => {
+                btn.addEventListener("click", function () {
+                    document
+                        .querySelectorAll(".time-btn")
+                        .forEach((b) => b.classList.remove("active"));
+                    this.classList.add("active");
+                    selectedHours = parseInt(this.getAttribute("data-hours"));
+                    fetchChartData();
+                    fetchChainStats();
+                });
+            });
 
             initCharts();
             refresh();
