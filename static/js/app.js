@@ -237,18 +237,10 @@ function getChainBadgeClass(chain) {
   return "chain-other";
 }
 
-// Calculate slot from block number (approximation)
-function getSlotFromBlock(blockNumber) {
-  const mergeBlock = 15537393;
-  const mergeSlot = 4700013;
-  return mergeSlot + (blockNumber - mergeBlock);
-}
-
 // Modal functions
 function showBlockModal(block) {
   const modal = document.getElementById("block-modal");
   const modalBody = document.getElementById("modal-body");
-  const slot = getSlotFromBlock(block.block_number);
 
   console.log("Block transactions:", block.transactions);
 
@@ -277,16 +269,10 @@ function showBlockModal(block) {
             <div class="detail-item">
                 <div class="detail-label">Block Height</div>
                 <div class="detail-value">
-                    <a href="https://lab.ethpandaops.io/ethereum/slots/${slot}?tab=block" target="_blank">${formatNumber(block.block_number)}</a>
+                    <a href="https://beaconcha.in/block/${block.block_number}" target="_blank">${formatNumber(block.block_number)}</a>
                 </div>
             </div>
             <div class="detail-item">
-                <div class="detail-label">Slot</div>
-                <div class="detail-value">
-                    <a href="https://lab.ethpandaops.io/ethereum/slots/${slot}" target="_blank">${formatNumber(slot)}</a>
-                </div>
-            </div>
-            <div class="detail-item full-width">
                 <div class="detail-label">Timestamp</div>
                 <div class="detail-value">${formatTimeAgo(block.block_timestamp)} (${formatTimestamp(block.block_timestamp)})</div>
             </div>
@@ -318,8 +304,8 @@ function showBlockModal(block) {
         </div>
 
         <div style="margin-top: 1rem; text-align: center;">
-            <a href="https://etherscan.io/block/${block.block_number}" target="_blank" style="color: var(--ctp-sapphire); font-size: 0.85rem;">
-                View on Etherscan
+            <a href="https://beaconcha.in/block/${block.block_number}" target="_blank" style="color: var(--ctp-sapphire); font-size: 0.85rem;">
+                View on Beaconcha.in
             </a>
         </div>
     `;
