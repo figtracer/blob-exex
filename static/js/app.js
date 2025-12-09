@@ -110,7 +110,7 @@ function initCharts() {
         ...chartOptions.scales,
         y: {
           ...chartOptions.scales.y,
-          beginAtZero: false,
+          beginAtZero: true,
           ticks: {
             ...chartOptions.scales.y.ticks,
             precision: 4,
@@ -413,25 +413,20 @@ async function fetchSenders() {
   }
 }
 
-// Aggregate data into buckets for smoother charts
-function aggregateData(labels, values, numBuckets = 50) {
-  if (labels.length <= numBuckets) {
+// Downsample data using LTTB algorithm for better visual representation
+function downsampleData(labels, values, threshold = 100) {
+  if (labels.length <= threshold) {
     return { labels, values };
   }
 
-  const bucketSize = Math.ceil(labels.length / numBuckets);
+  // Simple downsampling - take every nth point
+  const step = Math.ceil(labels.length / threshold);
   const newLabels = [];
   const newValues = [];
 
-  for (let i = 0; i < labels.length; i += bucketSize) {
-    const bucketLabels = labels.slice(i, i + bucketSize);
-    const bucketValues = values.slice(i, i + bucketSize);
-
-    // Use last label in bucket
-    newLabels.push(bucketLabels[bucketLabels.length - 1]);
-    // Average the values
-    const avg = bucketValues.reduce((a, b) => a + b, 0) / bucketValues.length;
-    newValues.push(Math.round(avg * 100) / 100);
+  for (let i = 0; i < labels.length; i += step) {
+    newLabels.push(labels[i]);
+    newValues.push(values[i]);
   }
 
   return { labels: newLabels, values: newValues };
@@ -442,16 +437,20 @@ async function fetchChartData() {
     const res = await fetch(`/api/chart?hours=${selectedHours}`);
     const data = await res.json();
 
-    // Aggregate for smoother display
-    const blobsAgg = aggregateData(data.labels, data.blobs, 60);
-    const gasAgg = aggregateData(data.labels, data.gas_prices, 60);
+    // Downsample for smoother display
+    const blobsDown = downsampleData(data.labels, data.blobs, 100);
+    const gasDown = downsampleData(data.labels, data.gas_prices, 100);
 
-    blobsChart.data.labels = blobsAgg.labels;
-    blobsChart.data.datasets[0].data = blobsAgg.values;
+    // Use simple index labels to avoid issues with large block numbers
+    const blobLabels = blobsDown.values.map((_, i) => i);
+    const gasLabels = gasDown.values.map((_, i) => i);
+
+    blobsChart.data.labels = blobLabels;
+    blobsChart.data.datasets[0].data = blobsDown.values;
     blobsChart.update("none");
 
-    gasChart.data.labels = gasAgg.labels;
-    gasChart.data.datasets[0].data = gasAgg.values;
+    gasChart.data.labels = gasLabels;
+    gasChart.data.datasets[0].data = gasDown.values;
     gasChart.update("none");
   } catch (e) {
     console.error("Failed to fetch chart data:", e);
