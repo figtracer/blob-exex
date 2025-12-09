@@ -416,7 +416,22 @@
                             },
                         ],
                     },
-                    options: chartOptions,
+                    options: {
+                        ...chartOptions,
+                        scales: {
+                            ...chartOptions.scales,
+                            y: {
+                                ...chartOptions.scales.y,
+                                beginAtZero: true,
+                                suggestedMax: 10,
+                                ticks: {
+                                    ...chartOptions.scales.y.ticks,
+                                    stepSize: 1,
+                                    precision: 0,
+                                },
+                            },
+                        },
+                    },
                 });
 
                 const gasCtx = document
@@ -436,7 +451,23 @@
                             },
                         ],
                     },
-                    options: chartOptions,
+                    options: {
+                        ...chartOptions,
+                        scales: {
+                            ...chartOptions.scales,
+                            y: {
+                                ...chartOptions.scales.y,
+                                beginAtZero: false,
+                                ticks: {
+                                    ...chartOptions.scales.y.ticks,
+                                    precision: 4,
+                                    callback: function (value) {
+                                        return value.toFixed(4);
+                                    },
+                                },
+                            },
+                        },
+                    },
                 });
             }
 
