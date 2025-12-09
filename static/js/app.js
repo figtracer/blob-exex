@@ -38,12 +38,6 @@ const chartOptions = {
   },
 };
 
-// Track mouse position globally
-let mouseY = 0;
-document.addEventListener("mousemove", (e) => {
-  mouseY = e.clientY;
-});
-
 // Custom tooltip function that follows mouse
 function customTooltip(context) {
   let tooltipEl = document.getElementById("chartjs-tooltip");
@@ -57,9 +51,7 @@ function customTooltip(context) {
     tooltipEl.style.opacity = 1;
     tooltipEl.style.pointerEvents = "none";
     tooltipEl.style.position = "absolute";
-    tooltipEl.style.transform = "translate(-50%, -100%)";
-    tooltipEl.style.transition =
-      "opacity 0.1s ease, left 0.05s ease, top 0.05s ease";
+    tooltipEl.style.transform = "translate(-50%, 0)";
     tooltipEl.style.border = "1px solid #45475a";
     tooltipEl.style.padding = "8px 12px";
     tooltipEl.style.fontSize = "0.8rem";
@@ -94,10 +86,10 @@ function customTooltip(context) {
 
   const position = context.chart.canvas.getBoundingClientRect();
   tooltipEl.style.opacity = 1;
-  // Use caretX for horizontal position but use mouse Y position for vertical
+  // Position tooltip at top of chart area, aligned with data point horizontally
   tooltipEl.style.left =
     position.left + window.pageXOffset + tooltipModel.caretX + "px";
-  tooltipEl.style.top = mouseY + window.pageYOffset - 15 + "px";
+  tooltipEl.style.top = position.top + window.pageYOffset + 10 + "px";
 }
 
 // Initialize charts
