@@ -8,7 +8,7 @@ use axum::{
 use rusqlite::Connection;
 use serde::{Deserialize, Serialize};
 use std::{collections::HashMap, sync::Arc};
-use tower_http::cors::CorsLayer;
+use tower_http::{cors::CorsLayer, services::ServeDir};
 
 type DbPath = Arc<String>;
 
@@ -468,6 +468,8 @@ async fn main() -> eyre::Result<()> {
 
     let db_path: DbPath = Arc::new(db_path);
 
+    let static_dir = std::env::var("BLOB_STATIC_DIR").unwrap_or_else(|_| "static".to_string());
+
     let app = Router::new()
         .route("/", get(index))
         .route("/api/stats", get(get_stats))
@@ -476,6 +478,8 @@ async fn main() -> eyre::Result<()> {
         .route("/api/chart", get(get_chart_data))
         .route("/api/blob-transactions", get(get_blob_transactions))
         .route("/api/chain-stats", get(get_chain_stats))
+        .nest_service("/css", ServeDir::new(format!("{}/css", static_dir)))
+        .nest_service("/js", ServeDir::new(format!("{}/js", static_dir)))
         .layer(CorsLayer::permissive())
         .with_state(db_path);
 
