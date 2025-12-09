@@ -442,15 +442,11 @@ async function fetchChartData() {
     const blobsDown = downsampleData(data.labels, data.blobs, 100);
     const gasDown = downsampleData(data.labels, data.gas_prices, 100);
 
-    // Use simple index labels to avoid issues with large block numbers
-    const blobLabels = blobsDown.values.map((_, i) => i);
-    const gasLabels = gasDown.values.map((_, i) => i);
-
-    blobsChart.data.labels = blobLabels;
+    blobsChart.data.labels = blobsDown.labels;
     blobsChart.data.datasets[0].data = blobsDown.values;
     blobsChart.update("none");
 
-    gasChart.data.labels = gasLabels;
+    gasChart.data.labels = gasDown.labels;
     gasChart.data.datasets[0].data = gasDown.values;
     gasChart.update("none");
   } catch (e) {
