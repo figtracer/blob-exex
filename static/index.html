@@ -811,19 +811,6 @@
                 updateTimestamp();
             }
 
-            // Time selector functionality
-            document.querySelectorAll(".time-btn").forEach((btn) => {
-                btn.addEventListener("click", function () {
-                    document
-                        .querySelectorAll(".time-btn")
-                        .forEach((b) => b.classList.remove("active"));
-                    this.classList.add("active");
-                    selectedHours = parseInt(this.getAttribute("data-hours"));
-                    fetchChartData();
-                    fetchChainStats();
-                });
-            });
-
             initCharts();
             refresh();
             setInterval(refresh, POLL_INTERVAL);
