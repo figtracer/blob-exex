@@ -54,6 +54,7 @@ fn create_tables(conn: &Connection) -> rusqlite::Result<()> {
         r#"
         CREATE TABLE IF NOT EXISTS blocks (
             block_number INTEGER PRIMARY KEY,
+            block_timestamp INTEGER NOT NULL,
             tx_count INTEGER NOT NULL,
             total_blobs INTEGER NOT NULL,
             gas_used INTEGER NOT NULL,
@@ -74,6 +75,49 @@ fn create_tables(conn: &Connection) -> rusqlite::Result<()> {
         (),
     )?;
 
+    conn.execute(
+        r#"
+        CREATE TABLE IF NOT EXISTS blob_transactions (
+            tx_hash TEXT PRIMARY KEY,
+            block_number INTEGER NOT NULL,
+            sender TEXT NOT NULL,
+            blob_count INTEGER NOT NULL,
+            gas_price INTEGER NOT NULL,
+            created_at INTEGER NOT NULL,
+            FOREIGN KEY (block_number) REFERENCES blocks(block_number)
+        )
+        "#,
+        (),
+    )?;
+
+    conn.execute(
+        r#"
+        CREATE TABLE IF NOT EXISTS blob_hashes (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            tx_hash TEXT NOT NULL,
+            blob_hash TEXT NOT NULL,
+            blob_index INTEGER NOT NULL,
+            FOREIGN KEY (tx_hash) REFERENCES blob_transactions(tx_hash)
+        )
+        "#,
+        (),
+    )?;
+
+    conn.execute(
+        "CREATE INDEX IF NOT EXISTS idx_blob_txs_block ON blob_transactions(block_number)",
+        (),
+    )?;
+
+    conn.execute(
+        "CREATE INDEX IF NOT EXISTS idx_blob_txs_sender ON blob_transactions(sender)",
+        (),
+    )?;
+
+    conn.execute(
+        "CREATE INDEX IF NOT EXISTS idx_blob_txs_created ON blob_transactions(created_at)",
+        (),
+    )?;
+
     info!("Database tables initialized");
     Ok(())
 }
@@ -81,6 +125,7 @@ fn create_tables(conn: &Connection) -> rusqlite::Result<()> {
 fn process_chain(db: &Connection, chain: &Chain) -> eyre::Result<()> {
     for block in chain.blocks_iter() {
         let block_number = block.header().number();
+        let block_timestamp = block.header().timestamp();
         let mut blob_tx_count = 0u64;
         let mut total_blobs = 0u64;
         let mut blob_gas_used = 0u128;
@@ -102,6 +147,29 @@ fn process_chain(db: &Connection, chain: &Chain) -> eyre::Result<()> {
                     blob_gas_used += (num_blobs as u128) * (DATA_GAS_PER_BLOB as u128);
 
                     if let Ok(sender) = tx.recover_signer() {
+                        let tx_hash = tx.tx_hash().to_string();
+
+                        // Insert blob transaction
+                        db.execute(
+                            "INSERT OR REPLACE INTO blob_transactions VALUES (?, ?, ?, ?, ?, ?)",
+                            (
+                                &tx_hash,
+                                block_number,
+                                sender.to_string(),
+                                num_blobs as i64,
+                                blob_gas_price,
+                                block_timestamp,
+                            ),
+                        )?;
+
+                        // Insert blob hashes
+                        for (idx, blob_hash) in blob_hashes.iter().enumerate() {
+                            db.execute(
+                                "INSERT INTO blob_hashes (tx_hash, blob_hash, blob_index) VALUES (?, ?, ?)",
+                                (&tx_hash, blob_hash.to_string(), idx as i64),
+                            )?;
+                        }
+
                         update_sender(db, sender, num_blobs)?;
                     }
                 }
@@ -110,9 +178,10 @@ fn process_chain(db: &Connection, chain: &Chain) -> eyre::Result<()> {
 
         if blob_tx_count > 0 {
             db.execute(
-                "INSERT OR REPLACE INTO blocks VALUES (?, ?, ?, ?, ?)",
+                "INSERT OR REPLACE INTO blocks VALUES (?, ?, ?, ?, ?, ?)",
                 (
                     block_number,
+                    block_timestamp,
                     blob_tx_count,
                     total_blobs,
                     blob_gas_used as i64,
