@@ -394,6 +394,7 @@ th {
 td {
     font-size: 0.8rem;
     font-variant-numeric: tabular-nums;
+    white-space: nowrap;
 }
 
 tr:hover {
