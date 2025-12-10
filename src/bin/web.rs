@@ -21,6 +21,7 @@ struct Stats {
     total_blobs: u64,
     total_transactions: u64,
     avg_blobs_per_block: f64,
+    first_block: Option<u64>,
     latest_block: Option<u64>,
     latest_gas_price: u64,
 }
@@ -119,6 +120,7 @@ fn identify_chain(address: &str) -> String {
         "0xcf2898225ed05be911d3709d9417e86e0b4cfc8f" => "Scroll".to_string(),
         "0x4f250b05262240c787a1ee222687c6ec395c628a" => "Scroll".to_string(),
         "0xb4a04505a487fcf16232d74ebb76429e232b1f21" => "Scroll".to_string(),
+        "0x054a47b9e2a22af6c0ce55020238c8fecd7d334b" => "Scroll".to_string(),
 
         // Starknet
         "0x415c8893d514f9bc5211d36eeda4183226b84aa7" => "Starknet".to_string(),
@@ -159,6 +161,7 @@ fn identify_chain(address: &str) -> String {
 
         // Metal
         "0xc94c243f8fb37223f3eb77f1e6d55e0f8f9caef4" => "Metal".to_string(),
+        "0xc94c243f8fb37223f3eb2f7961f7072602a51b8b" => "Metal".to_string(),
 
         // Cyber
         "0x3c11c3025ce387d76c2eddf1493ec55a8cc2a0f7" => "Cyber".to_string(),
@@ -174,6 +177,21 @@ fn identify_chain(address: &str) -> String {
 
         // Mint
         "0xd6c24e78cc77e48c87c246a2e0b7d21ffb7c1c0a" => "Mint".to_string(),
+
+        // Soneium
+        "0x6776be80dbada6a02b5f2095cf13734ac303b8d1" => "Soneium".to_string(),
+
+        // Lighter
+        "0xfbc0dcd6c3518cb529bc1b585db992a7d40005fa" => "Lighter".to_string(),
+
+        // UniChain
+        "0x2f60a5184c63ca94f82a27100643dbabe4f3f7fd" => "UniChain".to_string(),
+
+        // Katana
+        "0x1ffda89c755f6d4af069897d77ccabb580fd412a" => "Katana".to_string(),
+
+        // Codex
+        "0xb5bd290ef8ef3840cb866c7a8b7cc9e45fde3ab9" => "Codex".to_string(),
 
         _ => "Other".to_string(),
     }
@@ -206,13 +224,17 @@ async fn get_stats(State(db_path): State<DbPath>) -> Json<Stats> {
         })
         .unwrap_or(0);
 
+    let first_block: Option<u64> = conn
+        .query_row("SELECT MIN(block_number) FROM blocks", [], |row| row.get(0))
+        .ok();
+
     let latest_block: Option<u64> = conn
         .query_row("SELECT MAX(block_number) FROM blocks", [], |row| row.get(0))
         .ok();
 
     let latest_gas_price: u64 = conn
         .query_row(
-            "SELECT COALESCE(gas_price, 0) FROM blocks ORDER BY block_number DESC LIMIT 1",
+            "SELECT gas_price FROM blocks ORDER BY block_number DESC LIMIT 1",
             [],
             |row| row.get(0),
         )
@@ -229,6 +251,7 @@ async fn get_stats(State(db_path): State<DbPath>) -> Json<Stats> {
         total_blobs,
         total_transactions,
         avg_blobs_per_block,
+        first_block,
         latest_block,
         latest_gas_price,
     })

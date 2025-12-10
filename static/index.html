@@ -19,6 +19,10 @@
                 <div class="header-left">
                     <div class="logo">EXBLOB</div>
                     <div class="search-container">
+                        <div class="search-info" id="search-info">
+                            Range: <span id="first-block">-</span> to
+                            <span id="latest-block-search">-</span>
+                        </div>
                         <input
                             type="text"
                             id="block-search"
@@ -119,20 +123,6 @@
                                     data-label="Last 2000 blocks"
                                 >
                                     Last 2000 blocks
-                                </button>
-                                <button
-                                    class="time-picker-option"
-                                    data-blocks="5000"
-                                    data-label="Last 5000 blocks"
-                                >
-                                    Last 5000 blocks
-                                </button>
-                                <button
-                                    class="time-picker-option"
-                                    data-blocks="10000"
-                                    data-label="Last 10000 blocks"
-                                >
-                                    Last 10000 blocks
                                 </button>
                             </div>
                         </div>
