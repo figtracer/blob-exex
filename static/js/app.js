@@ -471,13 +471,6 @@ async function fetchStats() {
     document.getElementById("avg-gas").textContent = formatGwei(
       data.latest_gas_price,
     );
-
-    // Update search info with block range
-    document.getElementById("first-block").textContent = data.first_block
-      ? formatNumber(data.first_block)
-      : "-";
-    document.getElementById("latest-block-search").textContent =
-      data.latest_block ? formatNumber(data.latest_block) : "-";
   } catch (e) {
     console.error("Failed to fetch stats:", e);
   }

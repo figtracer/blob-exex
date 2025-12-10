@@ -21,7 +21,6 @@ struct Stats {
     total_blobs: u64,
     total_transactions: u64,
     avg_blobs_per_block: f64,
-    first_block: Option<u64>,
     latest_block: Option<u64>,
     latest_gas_price: u64,
 }
@@ -224,10 +223,6 @@ async fn get_stats(State(db_path): State<DbPath>) -> Json<Stats> {
         })
         .unwrap_or(0);
 
-    let first_block: Option<u64> = conn
-        .query_row("SELECT MIN(block_number) FROM blocks", [], |row| row.get(0))
-        .ok();
-
     let latest_block: Option<u64> = conn
         .query_row("SELECT MAX(block_number) FROM blocks", [], |row| row.get(0))
         .ok();
@@ -251,7 +246,6 @@ async fn get_stats(State(db_path): State<DbPath>) -> Json<Stats> {
         total_blobs,
         total_transactions,
         avg_blobs_per_block,
-        first_block,
         latest_block,
         latest_gas_price,
     })
