@@ -655,8 +655,8 @@ async fn main() -> eyre::Result<()> {
         .route("/api/chart", get(get_chart_data))
         .route("/api/blob-transactions", get(get_blob_transactions))
         .route("/api/chain-stats", get(get_chain_stats))
-        .nest_service("/css", ServeDir::new(format!("{}/css", static_dir)))
-        .nest_service("/js", ServeDir::new(format!("{}/js", static_dir)))
+        .nest_service("/assets", ServeDir::new(format!("{}/assets", static_dir)))
+        .nest_service("/icons", ServeDir::new(format!("{}/icons", static_dir)))
         .layer(CorsLayer::permissive())
         .with_state(db_path);
 
