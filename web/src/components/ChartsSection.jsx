@@ -54,15 +54,18 @@ function getChainColor(chainName) {
 
 const tooltipStyles = {
   container: {
-    background: "#1a1a2e",
-    border: "1px solid #2a2a4a",
+    background: "#16161f",
+    border: "1px solid #252530",
     borderRadius: "8px",
-    padding: "0.75rem",
-    boxShadow: "0 4px 12px rgba(0, 0, 0, 0.3)",
+    padding: "0.75rem 1rem",
+    boxShadow: "0 4px 12px rgba(0, 0, 0, 0.4)",
   },
   label: {
-    fontSize: "0.75rem",
-    color: "#a0a0b0",
+    fontSize: "0.7rem",
+    fontWeight: 600,
+    textTransform: "uppercase",
+    letterSpacing: "0.05em",
+    color: "#71717a",
     marginBottom: "0.5rem",
     margin: 0,
   },
@@ -73,16 +76,37 @@ const tooltipStyles = {
   },
 };
 
-const CustomTooltip = ({ active, payload, label }) => {
+const CustomTooltip = ({ active, payload, label, valueFormatter }) => {
   if (active && payload && payload.length) {
     return (
       <div style={tooltipStyles.container}>
         <p style={tooltipStyles.label}>{label}</p>
         {payload.map((entry, index) => (
-          <p key={index} style={{ ...tooltipStyles.value, color: entry.color }}>
-            {entry.name}: {entry.value}
+          <p
+            key={index}
+            style={{ ...tooltipStyles.value, color: entry.color || "#a78bfa" }}
+          >
+            {entry.name}:{" "}
+            {valueFormatter ? valueFormatter(entry.value) : entry.value}
           </p>
         ))}
+      </div>
+    );
+  }
+  return null;
+};
+
+const ChainTooltip = ({ active, payload }) => {
+  if (active && payload && payload.length) {
+    const data = payload[0].payload;
+    return (
+      <div style={tooltipStyles.container}>
+        <p style={{ ...tooltipStyles.label, color: data.color }}>
+          {data.chain}
+        </p>
+        <p style={{ ...tooltipStyles.value, color: "#e4e4e7" }}>
+          Blobs: {data.count.toLocaleString()}
+        </p>
       </div>
     );
   }
@@ -118,21 +142,30 @@ function ChartsSection({ chartData, chainStats }) {
       blobs: chartData.blobs?.[index] || 0,
     })) || [];
 
-  // Process chart data for gas prices
+  // Process chart data for gas prices - backend already returns in Gwei, no need to divide again
   const gasData =
     chartData.labels?.map((label, index) => ({
       block: label,
-      price: parseFloat((chartData.gas_prices?.[index] || 0) / 1e9).toFixed(2),
+      price: chartData.gas_prices?.[index] || 0,
     })) || [];
 
   // Process chain stats
   const chainData = chainStats
+    .filter((stat) => stat.blob_count > 0)
     .sort((a, b) => b.blob_count - a.blob_count)
+    .slice(0, 10)
     .map((stat) => ({
       chain: stat.chain || "Unknown",
       count: stat.blob_count || 0,
       color: getChainColor(stat.chain),
     }));
+
+  const formatGwei = (value) => {
+    if (value < 0.01) return "<0.01";
+    if (value < 1) return value.toFixed(3);
+    if (value < 100) return value.toFixed(2);
+    return value.toFixed(0);
+  };
 
   return (
     <>
@@ -140,31 +173,39 @@ function ChartsSection({ chartData, chainStats }) {
         <div className="charts-grid">
           {/* Blobs per Block Chart */}
           <div className="chart-card fade-in">
-            <h2 className="chart-title">Blobs per Block</h2>
-            <div className="chart-container">
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={blobsData}>
+            <div className="chart-header">
+              <h2 className="chart-title">Blobs per Block</h2>
+            </div>
+            <div className="chart-body">
+              <ResponsiveContainer width="100%" height={220}>
+                <BarChart
+                  data={blobsData}
+                  margin={{ top: 10, right: 10, left: -10, bottom: 0 }}
+                >
                   <CartesianGrid
                     strokeDasharray="3 3"
-                    stroke="var(--border-primary)"
+                    stroke="#252530"
                     vertical={false}
                   />
                   <XAxis
                     dataKey="block"
                     tick={false}
-                    stroke="var(--text-tertiary)"
+                    axisLine={{ stroke: "#252530" }}
+                    tickLine={false}
                   />
                   <YAxis
-                    stroke="var(--text-tertiary)"
-                    tick={{ fill: "var(--text-tertiary)", fontSize: 12 }}
+                    axisLine={{ stroke: "#252530" }}
+                    tickLine={false}
+                    tick={{ fill: "#71717a", fontSize: 11 }}
+                    width={40}
                   />
                   <Tooltip
                     content={<CustomTooltip />}
                     cursor={{ fill: "rgba(167, 139, 250, 0.1)" }}
                   />
-                  <Bar dataKey="blobs" radius={[4, 4, 0, 0]}>
+                  <Bar dataKey="blobs" radius={[2, 2, 0, 0]} maxBarSize={8}>
                     {blobsData.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill="var(--accent-purple)" />
+                      <Cell key={`cell-${index}`} fill="#a78bfa" />
                     ))}
                   </Bar>
                 </BarChart>
@@ -174,32 +215,48 @@ function ChartsSection({ chartData, chainStats }) {
 
           {/* Gas Price Chart */}
           <div className="chart-card fade-in">
-            <h2 className="chart-title">Blob Gas Price (Gwei)</h2>
-            <div className="chart-container">
-              <ResponsiveContainer width="100%" height="100%">
-                <LineChart data={gasData}>
+            <div className="chart-header">
+              <h2 className="chart-title">Blob Gas Price (Gwei)</h2>
+            </div>
+            <div className="chart-body">
+              <ResponsiveContainer width="100%" height={220}>
+                <LineChart
+                  data={gasData}
+                  margin={{ top: 10, right: 10, left: -10, bottom: 0 }}
+                >
                   <CartesianGrid
                     strokeDasharray="3 3"
-                    stroke="var(--border-primary)"
+                    stroke="#252530"
                     vertical={false}
                   />
                   <XAxis
                     dataKey="block"
                     tick={false}
-                    stroke="var(--text-tertiary)"
+                    axisLine={{ stroke: "#252530" }}
+                    tickLine={false}
                   />
                   <YAxis
-                    stroke="var(--text-tertiary)"
-                    tick={{ fill: "var(--text-tertiary)", fontSize: 12 }}
+                    axisLine={{ stroke: "#252530" }}
+                    tickLine={false}
+                    tick={{ fill: "#71717a", fontSize: 11 }}
+                    width={40}
+                    tickFormatter={formatGwei}
                   />
-                  <Tooltip content={<CustomTooltip />} />
+                  <Tooltip
+                    content={<CustomTooltip valueFormatter={formatGwei} />}
+                  />
                   <Line
                     type="monotone"
                     dataKey="price"
-                    stroke="var(--accent-yellow)"
+                    stroke="#fbbf24"
                     strokeWidth={2}
                     dot={false}
-                    activeDot={{ r: 6, fill: "var(--accent-yellow)" }}
+                    activeDot={{
+                      r: 4,
+                      fill: "#fbbf24",
+                      stroke: "#16161f",
+                      strokeWidth: 2,
+                    }}
                   />
                 </LineChart>
               </ResponsiveContainer>
@@ -208,33 +265,45 @@ function ChartsSection({ chartData, chainStats }) {
         </div>
 
         {/* Chain Stats Chart */}
-        <div className="chart-card fade-in" style={{ marginTop: "1rem" }}>
-          <h2 className="chart-title">Blobs by Chain</h2>
-          <div className="chart-container" style={{ height: "300px" }}>
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={chainData} layout="horizontal">
+        <div className="chart-card fade-in">
+          <div className="chart-header">
+            <h2 className="chart-title">Blobs by Chain</h2>
+          </div>
+          <div className="chart-body">
+            <ResponsiveContainer
+              width="100%"
+              height={Math.max(300, chainData.length * 35)}
+            >
+              <BarChart
+                data={chainData}
+                layout="vertical"
+                margin={{ top: 10, right: 30, left: 10, bottom: 10 }}
+              >
                 <CartesianGrid
                   strokeDasharray="3 3"
-                  stroke="var(--border-primary)"
+                  stroke="#252530"
                   horizontal={false}
                 />
                 <XAxis
                   type="number"
-                  stroke="var(--text-tertiary)"
-                  tick={{ fill: "var(--text-tertiary)", fontSize: 12 }}
+                  axisLine={{ stroke: "#252530" }}
+                  tickLine={false}
+                  tick={{ fill: "#71717a", fontSize: 11 }}
+                  tickFormatter={(value) => value.toLocaleString()}
                 />
                 <YAxis
                   type="category"
                   dataKey="chain"
-                  stroke="var(--text-tertiary)"
-                  tick={{ fill: "var(--text-secondary)", fontSize: 12 }}
-                  width={100}
+                  axisLine={{ stroke: "#252530" }}
+                  tickLine={false}
+                  tick={{ fill: "#a1a1aa", fontSize: 12 }}
+                  width={80}
                 />
                 <Tooltip
-                  content={<CustomTooltip />}
+                  content={<ChainTooltip />}
                   cursor={{ fill: "rgba(167, 139, 250, 0.1)" }}
                 />
-                <Bar dataKey="count" radius={[0, 4, 4, 0]}>
+                <Bar dataKey="count" radius={[0, 4, 4, 0]} maxBarSize={24}>
                   {chainData.map((entry, index) => (
                     <Cell key={`cell-${index}`} fill={entry.color} />
                   ))}
@@ -252,7 +321,7 @@ function ChartsSection({ chartData, chainStats }) {
 
         .charts-grid {
           display: grid;
-          grid-template-columns: repeat(auto-fit, minmax(500px, 1fr));
+          grid-template-columns: repeat(2, 1fr);
           gap: 1rem;
           margin-bottom: 1rem;
         }
@@ -261,7 +330,7 @@ function ChartsSection({ chartData, chainStats }) {
           background: var(--bg-card);
           border: 1px solid var(--border-primary);
           border-radius: 12px;
-          padding: 1.25rem;
+          overflow: hidden;
           transition: all 0.2s;
         }
 
@@ -269,18 +338,23 @@ function ChartsSection({ chartData, chainStats }) {
           border-color: var(--border-secondary);
         }
 
+        .chart-header {
+          padding: 1rem 1.25rem;
+          border-bottom: 1px solid var(--border-primary);
+          background: var(--bg-secondary);
+        }
+
         .chart-title {
           font-size: 0.875rem;
           font-weight: 600;
           color: var(--text-secondary);
-          margin-bottom: 1rem;
           text-transform: uppercase;
           letter-spacing: 0.05em;
+          margin: 0;
         }
 
-        .chart-container {
-          height: 250px;
-          position: relative;
+        .chart-body {
+          padding: 1rem;
         }
 
         .skeleton {
@@ -292,12 +366,13 @@ function ChartsSection({ chartData, chainStats }) {
           background: var(--border-primary);
           border-radius: 4px;
           width: 150px;
-          margin-bottom: 1rem;
+          margin: 1rem 1.25rem;
         }
 
         .skeleton-chart {
-          height: 250px;
+          height: 220px;
           background: var(--border-primary);
+          margin: 1rem;
           border-radius: 8px;
         }
 
@@ -308,12 +383,8 @@ function ChartsSection({ chartData, chainStats }) {
         }
 
         @media (max-width: 768px) {
-          .chart-card {
-            padding: 1rem;
-          }
-
-          .chart-container {
-            height: 200px;
+          .chart-body {
+            padding: 0.75rem;
           }
         }
       `}</style>
