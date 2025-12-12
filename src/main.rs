@@ -130,7 +130,7 @@ fn process_chain(db: &Connection, chain: &Chain) -> eyre::Result<()> {
 
         let blob_gas_price: i64 = block
             .header()
-            .blob_fee(BlobParams::osaka())
+            .blob_fee(BlobParams::bpo1())
             .unwrap_or(0)
             .try_into()
             .unwrap_or(i64::MAX);
