@@ -36,9 +36,14 @@ function BlockModal({ block, onClose }) {
             <div className="detail-grid">
               <div className="detail-item">
                 <div className="detail-label">Block Number</div>
-                <div className="detail-value highlight">
+                <a
+                  href={`https://beaconcha.in/block/${block.block_number}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="detail-value highlight block-number-link"
+                >
                   {formatNumber(block.block_number)}
-                </div>
+                </a>
               </div>
 
               <div className="detail-item">
@@ -86,9 +91,14 @@ function BlockModal({ block, onClose }) {
                   {block.transactions.map((tx, index) => (
                     <div key={index} className="tx-item">
                       <div className="tx-header">
-                        <span className="tx-hash mono">
+                        <a
+                          href={`https://etherscan.io/tx/${tx.tx_hash}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="tx-hash mono tx-hash-link"
+                        >
                           {truncateHash(tx.tx_hash, 10, 8)}
-                        </span>
+                        </a>
                         <ChainBadge chainName={tx.chain} size="sm" />
                       </div>
                       <div className="tx-details">
@@ -306,6 +316,28 @@ function BlockModal({ block, onClose }) {
         .tx-detail-value {
           color: var(--text-secondary);
           font-weight: 500;
+        }
+
+        .block-number-link {
+          text-decoration: none;
+          cursor: pointer;
+          transition: all 0.2s;
+          border-bottom: 2px solid transparent;
+        }
+
+        .block-number-link:hover {
+          border-bottom-color: var(--accent-purple);
+        }
+
+        .tx-hash-link {
+          text-decoration: none;
+          cursor: pointer;
+          transition: all 0.2s;
+          border-bottom: 1px solid transparent;
+        }
+
+        .tx-hash-link:hover {
+          border-bottom-color: var(--accent-cyan);
         }
 
         @media (max-width: 768px) {

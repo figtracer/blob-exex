@@ -53,9 +53,14 @@ function TablesSection({ blocks, senders, blobTransactions, onBlockClick }) {
                   {blobTransactions.slice(0, 10).map((tx, index) => (
                     <tr key={index}>
                       <td>
-                        <span className="mono highlight">
+                        <a
+                          href={`https://etherscan.io/tx/${tx.tx_hash}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="mono highlight tx-hash-link"
+                        >
                           {truncateHash(tx.tx_hash)}
-                        </span>
+                        </a>
                       </td>
                       <td>
                         <span className="number">
@@ -156,9 +161,15 @@ function TablesSection({ blocks, senders, blobTransactions, onBlockClick }) {
                     onClick={() => onBlockClick(block)}
                   >
                     <td>
-                      <span className="number highlight">
+                      <a
+                        href={`https://beaconcha.in/block/${block.block_number}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="number highlight block-number-link"
+                        onClick={(e) => e.stopPropagation()}
+                      >
                         {formatNumber(block.block_number)}
-                      </span>
+                      </a>
                     </td>
                     <td>
                       <span className="muted">
@@ -296,6 +307,30 @@ function TablesSection({ blocks, senders, blobTransactions, onBlockClick }) {
         .muted {
           color: var(--text-secondary);
           font-variant-numeric: tabular-nums;
+        }
+
+        .tx-hash-link {
+          text-decoration: none;
+          cursor: pointer;
+          transition: all 0.2s;
+          border-bottom: 1px solid transparent;
+          color: var(--accent-cyan);
+        }
+
+        .tx-hash-link:hover {
+          border-bottom-color: var(--accent-cyan);
+        }
+
+        .block-number-link {
+          text-decoration: none;
+          cursor: pointer;
+          transition: all 0.2s;
+          border-bottom: 2px solid transparent;
+          color: var(--accent-purple);
+        }
+
+        .block-number-link:hover {
+          border-bottom-color: var(--accent-purple);
         }
 
         .skeleton {

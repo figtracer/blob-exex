@@ -82,10 +82,6 @@ function Header({ onSearch, selectedBlocks, onBlocksChange, lastUpdate }) {
       <header className="header">
         <div className="header-content">
           <div className="header-left">
-            <div className="logo">
-              <img src="/icons/logo.png" alt="ExBlob" className="logo-image" />
-              <div className="logo-gradient"></div>
-            </div>
             <div className="search-wrapper">
               <form className="search-form" onSubmit={handleSearch}>
                 <div className="search-input-wrapper">
@@ -207,38 +203,6 @@ function Header({ onSearch, selectedBlocks, onBlocksChange, lastUpdate }) {
           align-items: center;
           gap: 2rem;
           flex: 1;
-        }
-
-        .logo {
-          position: relative;
-          display: flex;
-          align-items: center;
-          white-space: nowrap;
-          height: fit-content;
-        }
-
-        .logo-image {
-          height: 32px;
-          width: auto;
-          display: block;
-          position: relative;
-          z-index: 1;
-        }
-
-        .logo-gradient {
-          position: absolute;
-          top: 0;
-          left: 0;
-          width: 100%;
-          height: 100%;
-          background: linear-gradient(
-            180deg,
-            rgba(167, 139, 250, 0.3) 0%,
-            transparent 100%
-          );
-          pointer-events: none;
-          z-index: 2;
-          border-radius: 4px;
         }
 
         .search-wrapper {
@@ -532,14 +496,6 @@ function Header({ onSearch, selectedBlocks, onBlocksChange, lastUpdate }) {
 
           .search-wrapper {
             max-width: 100%;
-          }
-
-          .logo {
-            justify-content: center;
-          }
-
-          .logo-image {
-            height: 28px;
           }
         }
       `}</style>
