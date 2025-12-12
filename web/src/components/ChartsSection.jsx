@@ -219,7 +219,7 @@ function ChartsSection({ chartData, chainStats }) {
               <ResponsiveContainer width="100%" height={220}>
                 <LineChart
                   data={gasData}
-                  margin={{ top: 10, right: 10, left: -10, bottom: 0 }}
+                  margin={{ top: 10, right: 10, left: 10, bottom: 0 }}
                 >
                   <CartesianGrid
                     strokeDasharray="3 3"
@@ -236,7 +236,7 @@ function ChartsSection({ chartData, chainStats }) {
                     axisLine={{ stroke: "#252530" }}
                     tickLine={false}
                     tick={{ fill: "#71717a", fontSize: 11 }}
-                    width={40}
+                    width={70}
                     tickFormatter={formatGwei}
                   />
                   <Tooltip
