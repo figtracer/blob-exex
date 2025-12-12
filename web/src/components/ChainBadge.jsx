@@ -9,73 +9,55 @@ function ChainBadge({ chainName, showIcon = true, size = "md" }) {
   const icon = getChainIcon(chainName);
   const displayName = getChainDisplayName(chainName);
 
-  const sizeClasses = {
-    sm: "chain-badge-sm",
-    md: "chain-badge-md",
-    lg: "chain-badge-lg",
+  const sizeStyles = {
+    sm: {
+      fontSize: "0.7rem",
+      padding: "0.2rem 0.5rem",
+      gap: "0.25rem",
+    },
+    md: {
+      fontSize: "0.75rem",
+      padding: "0.25rem 0.625rem",
+      gap: "0.375rem",
+    },
+    lg: {
+      fontSize: "0.875rem",
+      padding: "0.375rem 0.75rem",
+      gap: "0.5rem",
+    },
+  };
+
+  const iconSizes = {
+    sm: { width: "12px", height: "12px" },
+    md: { width: "14px", height: "14px" },
+    lg: { width: "16px", height: "16px" },
+  };
+
+  const badgeStyle = {
+    display: "inline-flex",
+    alignItems: "center",
+    borderRadius: "6px",
+    fontWeight: 500,
+    whiteSpace: "nowrap",
+    background: `${color}20`,
+    color: color,
+    border: `1px solid ${color}40`,
+    ...sizeStyles[size],
+  };
+
+  const iconStyle = {
+    borderRadius: "50%",
+    objectFit: "cover",
+    ...iconSizes[size],
   };
 
   return (
-    <>
-      <span className={`chain-badge ${sizeClasses[size]}`}>
-        {showIcon && icon && (
-          <img src={icon} alt={displayName} className="chain-icon" />
-        )}
-        <span className="chain-name">{displayName}</span>
-      </span>
-
-      <style jsx>{`
-        .chain-badge {
-          display: inline-flex;
-          align-items: center;
-          gap: 0.375rem;
-          padding: 0.25rem 0.625rem;
-          border-radius: 6px;
-          font-weight: 500;
-          white-space: nowrap;
-          background: ${color}20;
-          color: ${color};
-          border: 1px solid ${color}40;
-        }
-
-        .chain-badge-sm {
-          font-size: 0.7rem;
-          padding: 0.2rem 0.5rem;
-          gap: 0.25rem;
-        }
-
-        .chain-badge-md {
-          font-size: 0.75rem;
-        }
-
-        .chain-badge-lg {
-          font-size: 0.875rem;
-          padding: 0.375rem 0.75rem;
-          gap: 0.5rem;
-        }
-
-        .chain-icon {
-          width: 14px;
-          height: 14px;
-          border-radius: 50%;
-          object-fit: cover;
-        }
-
-        .chain-badge-sm .chain-icon {
-          width: 12px;
-          height: 12px;
-        }
-
-        .chain-badge-lg .chain-icon {
-          width: 16px;
-          height: 16px;
-        }
-
-        .chain-name {
-          line-height: 1;
-        }
-      `}</style>
-    </>
+    <span style={badgeStyle}>
+      {showIcon && icon && (
+        <img src={icon} alt={displayName} style={iconStyle} />
+      )}
+      <span style={{ lineHeight: 1 }}>{displayName}</span>
+    </span>
   );
 }
 
