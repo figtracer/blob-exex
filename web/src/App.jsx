@@ -48,7 +48,7 @@ function App() {
   // Initial fetch and polling
   useEffect(() => {
     fetchData();
-    const interval = setInterval(fetchData, 3000);
+    const interval = setInterval(fetchData, 13000);
     return () => clearInterval(interval);
   }, [selectedBlocks]);
 
