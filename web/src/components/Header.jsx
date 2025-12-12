@@ -82,7 +82,10 @@ function Header({ onSearch, selectedBlocks, onBlocksChange, lastUpdate }) {
       <header className="header">
         <div className="header-content">
           <div className="header-left">
-            <div className="logo">EXBLOB</div>
+            <div className="logo">
+              <img src="/icons/logo.png" alt="ExBlob" className="logo-image" />
+              <div className="logo-gradient"></div>
+            </div>
             <div className="search-wrapper">
               <form className="search-form" onSubmit={handleSearch}>
                 <div className="search-input-wrapper">
@@ -207,19 +210,35 @@ function Header({ onSearch, selectedBlocks, onBlocksChange, lastUpdate }) {
         }
 
         .logo {
-          font-family: "Space Grotesk", sans-serif;
-          font-size: 1.5rem;
-          font-weight: 700;
-          letter-spacing: 1px;
-          background: linear-gradient(
-            135deg,
-            var(--accent-purple) 0%,
-            var(--accent-pink) 100%
-          );
-          -webkit-background-clip: text;
-          -webkit-text-fill-color: transparent;
-          background-clip: text;
+          position: relative;
+          height: 32px;
+          display: flex;
+          align-items: center;
           white-space: nowrap;
+        }
+
+        .logo-image {
+          height: 100%;
+          width: auto;
+          display: block;
+          position: relative;
+          z-index: 1;
+        }
+
+        .logo-gradient {
+          position: absolute;
+          top: 0;
+          left: 0;
+          right: 0;
+          height: 60%;
+          background: linear-gradient(
+            180deg,
+            rgba(167, 139, 250, 0.4) 0%,
+            rgba(236, 72, 153, 0.3) 50%,
+            transparent 100%
+          );
+          pointer-events: none;
+          z-index: 2;
         }
 
         .search-wrapper {
@@ -516,8 +535,8 @@ function Header({ onSearch, selectedBlocks, onBlocksChange, lastUpdate }) {
           }
 
           .logo {
-            font-size: 1.25rem;
-            text-align: center;
+            height: 28px;
+            justify-content: center;
           }
         }
       `}</style>
