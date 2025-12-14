@@ -98,9 +98,9 @@ const ChainTick = ({ x, y, payload }) => {
         />
       ) : (
         <text
-          x={-5}
+          x={-12}
           y={5}
-          textAnchor="end"
+          textAnchor="middle"
           fill="#71717a"
           fontSize={9}
           fontFamily="Inter, -apple-system, BlinkMacSystemFont, sans-serif"

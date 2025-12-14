@@ -26,6 +26,8 @@ export const CHAIN_COLORS = {
   redstone: "#dc2626",
   fraxtal: "#818cf8",
   mint: "#4ade80",
+  zircuit: "#FFEE55",
+  polynomial: "#6366f1",
   other: "#585b70",
 };
 
@@ -41,11 +43,13 @@ export const CHAINS_WITH_ICONS = [
   "metal",
   "mode",
   "optimism",
+  "polynomial",
   "scroll",
   "soneium",
   "starknet",
   "unichain",
   "world",
+  "zircuit",
   "zora",
 ];
 

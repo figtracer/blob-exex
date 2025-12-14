@@ -386,15 +386,20 @@ function BlockModal({ block, onClose }) {
           font-weight: 500;
         }
 
-        .block-number-link {
+        .block-number-link,
+        .block-number-link:link,
+        .block-number-link:visited,
+        .block-number-link:hover,
+        .block-number-link:active {
           text-decoration: none;
           cursor: pointer;
           transition: all 0.2s;
-          border-bottom: 2px solid transparent;
+          border: none;
+          border-bottom: none;
         }
 
         .block-number-link:hover {
-          border-bottom-color: var(--accent-purple);
+          opacity: 0.8;
         }
 
         .tx-hash-link,
