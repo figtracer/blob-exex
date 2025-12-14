@@ -29,7 +29,7 @@ function Footer() {
               <img src="/icons/socials/github.png?v=2" alt="GitHub" />
             </a>
             <a
-              href="https://x.com/home"
+              href="https://x.com/figtracer"
               target="_blank"
               rel="noopener noreferrer"
               aria-label="X (Twitter)"
