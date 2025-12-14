@@ -24,23 +24,17 @@ function Footer() {
               href="https://github.com/figtracer"
               target="_blank"
               rel="noopener noreferrer"
-              className="social-link"
               aria-label="GitHub"
             >
-              <img
-                src="/icons/socials/github.png"
-                alt="GitHub"
-                className="social-icon"
-              />
+              <img src="/icons/socials/github.png?v=2" alt="GitHub" />
             </a>
             <a
               href="https://x.com/home"
               target="_blank"
               rel="noopener noreferrer"
-              className="social-link"
               aria-label="X (Twitter)"
             >
-              <img src="/icons/socials/x.png" alt="X" className="social-icon" />
+              <img src="/icons/socials/x.png?v=2" alt="X" />
             </a>
           </div>
         </div>
@@ -102,32 +96,25 @@ function Footer() {
           gap: 0.75rem;
         }
 
-        .social-link {
-          display: flex;
+        .footer-socials a {
+          display: inline-flex;
           align-items: center;
           justify-content: center;
-          width: 36px;
-          height: 36px;
-          background: var(--bg-tertiary);
-          border: 1px solid var(--border-primary);
-          border-radius: 8px;
-          transition: all 0.2s;
+          transition: transform 0.2s;
         }
 
-        .social-link:hover {
-          border-color: var(--border-secondary);
-          background: var(--bg-hover);
+        .footer-socials a:hover {
           transform: translateY(-2px);
         }
 
-        .social-icon {
+        .footer-socials img {
           width: 18px;
           height: 18px;
           opacity: 0.8;
           transition: opacity 0.2s;
         }
 
-        .social-link:hover .social-icon {
+        .footer-socials a:hover img {
           opacity: 1;
         }
 
