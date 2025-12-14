@@ -119,7 +119,7 @@ function BlockModal({ block, onClose }) {
                 </div>
               </div>
 
-              <div className="detail-item detail-item-full">
+              <div className="detail-item">
                 <div className="detail-label">
                   Excess Blob Gas
                   <span
@@ -272,10 +272,6 @@ function BlockModal({ block, onClose }) {
           border: 1px solid var(--border-primary);
           border-radius: 8px;
           padding: 1rem;
-        }
-
-        .detail-item-full {
-          grid-column: 1 / -1;
         }
 
         .detail-label {

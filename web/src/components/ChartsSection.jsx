@@ -114,32 +114,26 @@ const ChainTooltip = ({ active, payload }) => {
   return null;
 };
 
-// Custom Y-axis tick with chain logo
+// Custom Y-axis tick with chain logo only
 const ChainTick = ({ x, y, payload }) => {
   const chainIcon = getChainIcon(payload.value);
 
   return (
     <g transform={`translate(${x},${y})`}>
-      {chainIcon && (
+      {chainIcon ? (
         <image
-          x={-30}
+          x={-10}
           y={-7}
           width={14}
           height={14}
           xlinkHref={chainIcon}
           style={{ borderRadius: "50%" }}
         />
+      ) : (
+        <text x={-5} y={0} dy={4} textAnchor="end" fill="#a1a1aa" fontSize={12}>
+          {payload.value}
+        </text>
       )}
-      <text
-        x={chainIcon ? -12 : -5}
-        y={0}
-        dy={4}
-        textAnchor="end"
-        fill="#a1a1aa"
-        fontSize={12}
-      >
-        {payload.value}
-      </text>
     </g>
   );
 };
@@ -362,7 +356,7 @@ function ChartsSection({ chartData, chainStats, onBlockClick }) {
                   axisLine={{ stroke: "#252530" }}
                   tickLine={false}
                   tick={<ChainTick />}
-                  width={100}
+                  width={30}
                 />
                 <Tooltip
                   content={<ChainTooltip />}
