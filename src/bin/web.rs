@@ -127,6 +127,9 @@ fn identify_chain(address: &str) -> String {
         "0x415c8893d514f9bc5211d36eeda4183226b84aa7" => "Starknet".to_string(),
         "0x2c169dfe5fbba12957bdd0ba47d9cedbfe260ca7" => "Starknet".to_string(),
 
+        // Zircuit
+        "0xaf1e4f6a47af647f87c0ec814d8032c4a4bff145" => "Zircuit".to_string(),
+
         // zkSync Era
         "0xa9268341831efa4937537bc3e9eb36dbece83c7e" => "zkSync Era".to_string(),
         "0x3dB52cE065f728011Ac6732222270b3F2360d919" => "zkSync Era".to_string(),
