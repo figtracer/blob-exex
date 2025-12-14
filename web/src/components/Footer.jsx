@@ -9,7 +9,14 @@ function Footer() {
             <span className="made-with">
               Made with <Heart size={14} className="heart-icon" /> by
             </span>
-            <span className="author">Fig</span>
+            <a
+              href="https://x.com/figtracer"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="author"
+            >
+              Fig
+            </a>
           </div>
 
           <div className="footer-socials">
@@ -33,11 +40,7 @@ function Footer() {
               className="social-link"
               aria-label="X (Twitter)"
             >
-              <img
-                src="/icons/socials/x.png"
-                alt="X"
-                className="social-icon"
-              />
+              <img src="/icons/socials/x.png" alt="X" className="social-icon" />
             </a>
           </div>
         </div>
@@ -45,8 +48,6 @@ function Footer() {
 
       <style jsx>{`
         .footer {
-          background: var(--bg-secondary);
-          border-top: 1px solid var(--border-primary);
           padding: 1.5rem 0;
           margin-top: auto;
         }

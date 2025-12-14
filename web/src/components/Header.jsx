@@ -217,8 +217,6 @@ function Header({
 
       <style jsx>{`
         .controls-bar {
-          background: var(--bg-secondary);
-          border-bottom: 1px solid var(--border-primary);
           padding: 0.75rem 0;
         }
 
