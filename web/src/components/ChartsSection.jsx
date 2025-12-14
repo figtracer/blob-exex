@@ -10,6 +10,7 @@ import {
   ResponsiveContainer,
   Cell,
 } from "recharts";
+import { getChainIcon } from "../utils/chains";
 
 const CHAIN_COLORS = {
   base: "#0052ff",
@@ -113,7 +114,37 @@ const ChainTooltip = ({ active, payload }) => {
   return null;
 };
 
-function ChartsSection({ chartData, chainStats }) {
+// Custom Y-axis tick with chain logo
+const ChainTick = ({ x, y, payload }) => {
+  const chainIcon = getChainIcon(payload.value);
+
+  return (
+    <g transform={`translate(${x},${y})`}>
+      {chainIcon && (
+        <image
+          x={-30}
+          y={-7}
+          width={14}
+          height={14}
+          xlinkHref={chainIcon}
+          style={{ borderRadius: "50%" }}
+        />
+      )}
+      <text
+        x={chainIcon ? -12 : -5}
+        y={0}
+        dy={4}
+        textAnchor="end"
+        fill="#a1a1aa"
+        fontSize={12}
+      >
+        {payload.value}
+      </text>
+    </g>
+  );
+};
+
+function ChartsSection({ chartData, chainStats, onBlockClick }) {
   if (!chartData || !chainStats) {
     return (
       <div className="charts-section">
@@ -178,6 +209,18 @@ function ChartsSection({ chartData, chainStats }) {
                 <BarChart
                   data={blobsData}
                   margin={{ top: 10, right: 10, left: -10, bottom: 0 }}
+                  onClick={(data) => {
+                    if (data && data.activePayload && data.activePayload[0]) {
+                      const blockNumber = data.activePayload[0].payload.block;
+                      if (onBlockClick) {
+                        fetch(`/api/block?block_number=${blockNumber}`)
+                          .then((res) => res.json())
+                          .then((block) => {
+                            if (block) onBlockClick(block);
+                          });
+                      }
+                    }
+                  }}
                 >
                   <CartesianGrid
                     strokeDasharray="3 3"
@@ -198,11 +241,18 @@ function ChartsSection({ chartData, chainStats }) {
                   />
                   <Tooltip
                     content={<CustomTooltip />}
-                    cursor={{ fill: "rgba(167, 139, 250, 0.1)" }}
+                    cursor={{
+                      fill: "rgba(167, 139, 250, 0.1)",
+                      cursor: "pointer",
+                    }}
                   />
                   <Bar dataKey="blobs" radius={[2, 2, 0, 0]} maxBarSize={8}>
                     {blobsData.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill="#a78bfa" />
+                      <Cell
+                        key={`cell-${index}`}
+                        fill="#a78bfa"
+                        style={{ cursor: "pointer" }}
+                      />
                     ))}
                   </Bar>
                 </BarChart>
@@ -220,6 +270,18 @@ function ChartsSection({ chartData, chainStats }) {
                 <LineChart
                   data={gasData}
                   margin={{ top: 10, right: 10, left: 10, bottom: 0 }}
+                  onClick={(data) => {
+                    if (data && data.activePayload && data.activePayload[0]) {
+                      const blockNumber = data.activePayload[0].payload.block;
+                      if (onBlockClick) {
+                        fetch(`/api/block?block_number=${blockNumber}`)
+                          .then((res) => res.json())
+                          .then((block) => {
+                            if (block) onBlockClick(block);
+                          });
+                      }
+                    }
+                  }}
                 >
                   <CartesianGrid
                     strokeDasharray="3 3"
@@ -241,6 +303,11 @@ function ChartsSection({ chartData, chainStats }) {
                   />
                   <Tooltip
                     content={<CustomTooltip valueFormatter={formatGwei} />}
+                    cursor={{
+                      stroke: "#fbbf24",
+                      strokeWidth: 1,
+                      cursor: "pointer",
+                    }}
                   />
                   <Line
                     type="monotone"
@@ -253,6 +320,7 @@ function ChartsSection({ chartData, chainStats }) {
                       fill: "#fbbf24",
                       stroke: "#16161f",
                       strokeWidth: 2,
+                      cursor: "pointer",
                     }}
                   />
                 </LineChart>
@@ -293,8 +361,8 @@ function ChartsSection({ chartData, chainStats }) {
                   dataKey="chain"
                   axisLine={{ stroke: "#252530" }}
                   tickLine={false}
-                  tick={{ fill: "#a1a1aa", fontSize: 12 }}
-                  width={80}
+                  tick={<ChainTick />}
+                  width={100}
                 />
                 <Tooltip
                   content={<ChainTooltip />}
@@ -333,6 +401,10 @@ function ChartsSection({ chartData, chainStats }) {
 
         .chart-card:hover {
           border-color: var(--border-secondary);
+        }
+
+        .chart-body {
+          cursor: pointer;
         }
 
         .chart-header {

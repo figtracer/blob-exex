@@ -76,6 +76,7 @@ function App() {
         selectedBlocks={selectedBlocks}
         onBlocksChange={setSelectedBlocks}
         lastUpdate={lastUpdate}
+        stats={stats}
       />
 
       <main className="main-content">
@@ -87,7 +88,11 @@ function App() {
         ) : (
           <>
             <StatsGrid stats={stats} />
-            <ChartsSection chartData={chartData} chainStats={chainStats} />
+            <ChartsSection
+              chartData={chartData}
+              chainStats={chainStats}
+              onBlockClick={setSelectedBlock}
+            />
             <TablesSection
               blocks={blocks}
               senders={senders}

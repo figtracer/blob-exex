@@ -7,10 +7,15 @@ const BLOCK_OPTIONS = [
   { value: 200, label: "Last 200 blocks" },
   { value: 500, label: "Last 500 blocks" },
   { value: 1000, label: "Last 1000 blocks" },
-  { value: 2000, label: "Last 2000 blocks" },
 ];
 
-function Header({ onSearch, selectedBlocks, onBlocksChange, lastUpdate }) {
+function Header({
+  onSearch,
+  selectedBlocks,
+  onBlocksChange,
+  lastUpdate,
+  stats,
+}) {
   const [searchValue, setSearchValue] = useState("");
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [isSearching, setIsSearching] = useState(false);
@@ -35,7 +40,22 @@ function Header({ onSearch, selectedBlocks, onBlocksChange, lastUpdate }) {
     try {
       const result = await onSearch(blockNumber);
       if (result === false) {
-        setSearchError(`Block #${blockNumber} not found`);
+        // Show a more helpful error message with available block range
+        if (stats?.earliest_block && stats?.latest_block) {
+          if (blockNumber < stats.earliest_block) {
+            setSearchError(
+              `Block #${blockNumber} not found. First available block: ${stats.earliest_block.toLocaleString()}`,
+            );
+          } else if (blockNumber > stats.latest_block) {
+            setSearchError(
+              `Block #${blockNumber} not found. Latest block: ${stats.latest_block.toLocaleString()}`,
+            );
+          } else {
+            setSearchError(`Block #${blockNumber} not found in database`);
+          }
+        } else {
+          setSearchError(`Block #${blockNumber} not found`);
+        }
       } else {
         setSearchValue("");
       }

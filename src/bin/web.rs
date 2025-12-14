@@ -22,6 +22,7 @@ struct Stats {
     total_transactions: u64,
     avg_blobs_per_block: f64,
     latest_block: Option<u64>,
+    earliest_block: Option<u64>,
     latest_gas_price: u64,
 }
 
@@ -43,6 +44,7 @@ struct Block {
     total_blob_size: u64,
     gas_used: u64,
     gas_price: u64,
+    excess_blob_gas: u64,
     transactions: Vec<BlockTransaction>,
 }
 
@@ -227,6 +229,10 @@ async fn get_stats(State(db_path): State<DbPath>) -> Json<Stats> {
         .query_row("SELECT MAX(block_number) FROM blocks", [], |row| row.get(0))
         .ok();
 
+    let earliest_block: Option<u64> = conn
+        .query_row("SELECT MIN(block_number) FROM blocks", [], |row| row.get(0))
+        .ok();
+
     let latest_gas_price: u64 = conn
         .query_row(
             "SELECT gas_price FROM blocks ORDER BY block_number DESC LIMIT 1",
@@ -247,6 +253,7 @@ async fn get_stats(State(db_path): State<DbPath>) -> Json<Stats> {
         total_transactions,
         avg_blobs_per_block,
         latest_block,
+        earliest_block,
         latest_gas_price,
     })
 }
@@ -256,12 +263,12 @@ async fn get_recent_blocks(State(db_path): State<DbPath>) -> Json<Vec<Block>> {
 
     let mut stmt = conn
         .prepare(
-            "SELECT block_number, block_timestamp, tx_count, total_blobs, gas_used, gas_price
+            "SELECT block_number, block_timestamp, tx_count, total_blobs, gas_used, gas_price, excess_blob_gas
              FROM blocks ORDER BY block_number DESC LIMIT 50",
         )
         .unwrap();
 
-    let block_data: Vec<(u64, u64, u64, u64, u64, u64)> = stmt
+    let block_data: Vec<(u64, u64, u64, u64, u64, u64, u64)> = stmt
         .query_map([], |row| {
             Ok((
                 row.get(0)?,
@@ -270,6 +277,7 @@ async fn get_recent_blocks(State(db_path): State<DbPath>) -> Json<Vec<Block>> {
                 row.get(3)?,
                 row.get(4)?,
                 row.get(5)?,
+                row.get(6)?,
             ))
         })
         .unwrap()
@@ -278,7 +286,7 @@ async fn get_recent_blocks(State(db_path): State<DbPath>) -> Json<Vec<Block>> {
 
     let blocks: Vec<Block> = block_data
         .into_iter()
-        .map(|(block_number, block_timestamp, tx_count, total_blobs, gas_used, gas_price)| {
+        .map(|(block_number, block_timestamp, tx_count, total_blobs, gas_used, gas_price, excess_blob_gas)| {
             // Fetch transactions for this block
             let mut tx_stmt = conn
                 .prepare(
@@ -314,6 +322,7 @@ async fn get_recent_blocks(State(db_path): State<DbPath>) -> Json<Vec<Block>> {
                 total_blob_size: total_blobs * BLOB_SIZE_BYTES,
                 gas_used,
                 gas_price,
+                excess_blob_gas,
                 transactions,
             }
         })
@@ -568,9 +577,9 @@ async fn get_block(
     let block_number = params.block_number;
 
     // Check if block exists
-    let block_exists: Option<(u64, u64, u64, u64, u64)> = conn
+    let block_exists: Option<(u64, u64, u64, u64, u64, u64)> = conn
         .query_row(
-            "SELECT block_timestamp, tx_count, total_blobs, gas_used, gas_price
+            "SELECT block_timestamp, tx_count, total_blobs, gas_used, gas_price, excess_blob_gas
              FROM blocks WHERE block_number = ?",
             [block_number],
             |row| {
@@ -580,12 +589,15 @@ async fn get_block(
                     row.get(2)?,
                     row.get(3)?,
                     row.get(4)?,
+                    row.get(5)?,
                 ))
             },
         )
         .ok();
 
-    if let Some((block_timestamp, tx_count, total_blobs, gas_used, gas_price)) = block_exists {
+    if let Some((block_timestamp, tx_count, total_blobs, gas_used, gas_price, excess_blob_gas)) =
+        block_exists
+    {
         // Fetch transactions for this block
         let mut tx_stmt = conn
             .prepare(
@@ -621,6 +633,7 @@ async fn get_block(
             total_blob_size: total_blobs * BLOB_SIZE_BYTES,
             gas_used,
             gas_price,
+            excess_blob_gas,
             transactions,
         }))
     } else {

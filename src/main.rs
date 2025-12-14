@@ -58,7 +58,8 @@ fn create_tables(conn: &Connection) -> rusqlite::Result<()> {
             tx_count INTEGER NOT NULL,
             total_blobs INTEGER NOT NULL,
             gas_used INTEGER NOT NULL,
-            gas_price INTEGER NOT NULL
+            gas_price INTEGER NOT NULL,
+            excess_blob_gas INTEGER NOT NULL DEFAULT 0
         )
         "#,
         (),
@@ -135,6 +136,13 @@ fn process_chain(db: &Connection, chain: &Chain) -> eyre::Result<()> {
             .try_into()
             .unwrap_or(i64::MAX);
 
+        let excess_blob_gas: i64 = block
+            .header()
+            .excess_blob_gas()
+            .unwrap_or(0)
+            .try_into()
+            .unwrap_or(0);
+
         for tx in block.body().transactions() {
             if tx.tx_type() == 3 {
                 blob_tx_count += 1;
@@ -175,7 +183,7 @@ fn process_chain(db: &Connection, chain: &Chain) -> eyre::Result<()> {
         }
 
         db.execute(
-            "INSERT OR REPLACE INTO blocks VALUES (?, ?, ?, ?, ?, ?)",
+            "INSERT OR REPLACE INTO blocks VALUES (?, ?, ?, ?, ?, ?, ?)",
             (
                 block_number,
                 block_timestamp,
@@ -183,6 +191,7 @@ fn process_chain(db: &Connection, chain: &Chain) -> eyre::Result<()> {
                 total_blobs,
                 blob_gas_used as i64,
                 blob_gas_price,
+                excess_blob_gas,
             ),
         )?;
 

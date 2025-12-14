@@ -20,6 +20,7 @@ function BlockModal({ block, onClose }) {
   const targetGas = BPO1_TARGET_BLOBS_PER_BLOCK * DATA_GAS_PER_BLOB;
   const maxGas = BPO1_MAX_BLOBS_PER_BLOCK * DATA_GAS_PER_BLOB;
   const blobGasUsed = block.gas_used || 0;
+  const excessBlobGas = block.excess_blob_gas || 0;
 
   // Blob Gas percentage (of max)
   const blobGasPercent = ((blobGasUsed / maxGas) * 100).toFixed(2);
@@ -115,6 +116,21 @@ function BlockModal({ block, onClose }) {
                     {targetDiffSign}
                     {targetDiff}% Blob Gas Target
                   </div>
+                </div>
+              </div>
+
+              <div className="detail-item detail-item-full">
+                <div className="detail-label">
+                  Excess Blob Gas
+                  <span
+                    className="detail-info-icon"
+                    title="Running total of blob gas consumed in excess of the target, prior to the block. Blocks with above-target blob gas consumption increase this value, blocks with below-target blob gas consumption decrease it (bounded at 0)."
+                  >
+                    ⓘ
+                  </span>
+                </div>
+                <div className="detail-value">
+                  {formatNumber(excessBlobGas)}
                 </div>
               </div>
             </div>
@@ -258,6 +274,10 @@ function BlockModal({ block, onClose }) {
           padding: 1rem;
         }
 
+        .detail-item-full {
+          grid-column: 1 / -1;
+        }
+
         .detail-label {
           font-size: 0.7rem;
           font-weight: 600;
@@ -277,6 +297,20 @@ function BlockModal({ block, onClose }) {
         .detail-value.highlight {
           color: var(--accent-purple);
           font-weight: 600;
+        }
+
+        .detail-info-icon {
+          display: inline-block;
+          margin-left: 0.375rem;
+          font-size: 0.75rem;
+          color: var(--text-tertiary);
+          cursor: help;
+          opacity: 0.7;
+          transition: opacity 0.2s;
+        }
+
+        .detail-info-icon:hover {
+          opacity: 1;
         }
 
         .usage-percent {
