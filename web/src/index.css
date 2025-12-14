@@ -123,6 +123,11 @@ h3 {
     color: var(--bg-primary);
 }
 
+/* Links - prevent default underline on styled links */
+a {
+    text-decoration: none;
+}
+
 /* Focus styles */
 button:focus-visible,
 input:focus-visible,

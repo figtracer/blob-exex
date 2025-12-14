@@ -397,11 +397,16 @@ function BlockModal({ block, onClose }) {
           border-bottom-color: var(--accent-purple);
         }
 
-        .tx-hash-link {
+        .tx-hash-link,
+        .tx-hash-link:link,
+        .tx-hash-link:visited,
+        .tx-hash-link:hover,
+        .tx-hash-link:active {
           text-decoration: none;
           cursor: pointer;
           transition: color 0.2s;
           border: none;
+          border-bottom: none;
           outline: none;
           background: none;
           display: inline;

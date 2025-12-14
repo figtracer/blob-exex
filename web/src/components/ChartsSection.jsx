@@ -76,12 +76,26 @@ const ChainTooltip = ({ active, payload }) => {
 
 // Custom Y-axis tick with chain logo or "Other" text
 const ChainTick = ({ x, y, payload }) => {
-  const chainIcon = getChainIcon(payload.value);
+  // Defensive check - payload might be undefined or have no value
+  if (!payload || payload.value === undefined || payload.value === null) {
+    return null;
+  }
+
+  const chainName = String(payload.value);
+  const chainIcon = getChainIcon(chainName);
 
   return (
     <g transform={`translate(${x},${y})`}>
       {chainIcon ? (
-        <image x={-20} y={-8} width={16} height={16} href={chainIcon} />
+        <image
+          x={-20}
+          y={-8}
+          width={16}
+          height={16}
+          href={chainIcon}
+          xlinkHref={chainIcon}
+          preserveAspectRatio="xMidYMid meet"
+        />
       ) : (
         <text
           x={-5}
@@ -91,7 +105,7 @@ const ChainTick = ({ x, y, payload }) => {
           fontSize={9}
           fontFamily="Inter, -apple-system, BlinkMacSystemFont, sans-serif"
         >
-          Other
+          {chainName.length > 6 ? chainName.substring(0, 5) + "…" : chainName}
         </text>
       )}
     </g>
@@ -315,6 +329,7 @@ function ChartsSection({ chartData, chainStats, onBlockClick }) {
                   tickLine={false}
                   tick={<ChainTick />}
                   width={30}
+                  interval={0}
                 />
                 <Tooltip
                   content={<ChainTooltip />}
