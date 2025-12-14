@@ -138,6 +138,9 @@ fn identify_chain(address: &str) -> String {
         "0xd19d4b5d358258f05d7b411e21a1460d11b0876f" => "Linea".to_string(),
         "0xc70ae19b5feaa5c19f576e621d2bad9771864fe2" => "Linea".to_string(),
 
+        // Hemi
+        "0x65115c6d23274e0a29a63b69130efe901aa52e7a" => "Hemi".to_string(),
+
         // Taiko
         "0x77b064f418b27167bd8c6f263a16455e628b56cb" => "Taiko".to_string(),
         "0xfc3756dc89ee98b049c1f2b0c8e69f0649e5c3e3" => "Taiko".to_string(),
