@@ -240,7 +240,7 @@ function ChartsSection({ chartData, chainStats, onBlockClick }) {
           {/* Gas Price Chart */}
           <div className="chart-card fade-in">
             <div className="chart-header">
-              <h2 className="chart-title">Blob Gas Price (Gwei)</h2>
+              <h2 className="chart-title">Blob Gas Price Per Block (Gwei)</h2>
             </div>
             <div className="chart-body">
               <ResponsiveContainer width="100%" height={220}>
