@@ -121,8 +121,8 @@ function getBlobBarColor(blobCount) {
   if (blobCount <= BLOB_TARGET * 0.5) return "#22c55e"; // green - abundant
   if (blobCount <= BLOB_TARGET * 0.9) return "#3b82f6"; // blue - normal
   if (blobCount <= BLOB_TARGET * 1.2) return "#f59e0b"; // amber - pressured
-  if (blobCount <= BLOB_MAX) return "#f97316"; // orange - congested
-  return "#ef4444"; // red - saturated (at max)
+  if (blobCount < BLOB_MAX) return "#f97316"; // orange - congested
+  return "#ef4444"; // red - at max capacity (15 blobs)
 }
 
 function ChartsSection({ chartData, chainProfiles, onBlockClick }) {

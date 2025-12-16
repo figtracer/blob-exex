@@ -16,14 +16,14 @@ export function getUtilizationColor(utilization) {
   if (utilization <= 50) return "#22c55e"; // green
   if (utilization <= 90) return "#3b82f6"; // blue
   if (utilization <= 120) return "#f59e0b"; // amber
-  if (utilization <= 150) return "#f97316"; // orange
-  return "#ef4444"; // red
+  if (utilization < 150) return "#f97316"; // orange
+  return "#ef4444"; // red (at max: 150% = 15 blobs)
 }
 
 // Get saturation color based on percentage
 export function getSaturationColor(saturation) {
   if (saturation <= 33) return "#22c55e"; // green (0-5 blobs)
   if (saturation <= 66) return "#f59e0b"; // amber (5-10 blobs)
-  if (saturation <= 90) return "#f97316"; // orange (10-13.5 blobs)
-  return "#ef4444"; // red (>13.5 blobs)
+  if (saturation < 100) return "#f97316"; // orange (10-14 blobs)
+  return "#ef4444"; // red (at max: 100% = 15 blobs)
 }
