@@ -256,7 +256,12 @@ function ChartsSection({ chartData, chainProfiles, onBlockClick }) {
                       fontSize: 9,
                     }}
                   />
-                  <Bar dataKey="blobs" radius={[2, 2, 0, 0]} maxBarSize={8}>
+                  <Bar
+                    dataKey="blobs"
+                    radius={[2, 2, 0, 0]}
+                    maxBarSize={8}
+                    isAnimationActive={false}
+                  >
                     {blobsData.map((entry) => (
                       <Cell
                         key={`cell-${entry.block}`}
@@ -368,7 +373,12 @@ function ChartsSection({ chartData, chainProfiles, onBlockClick }) {
                   content={<ChainTooltip />}
                   cursor={{ fill: "rgba(167, 139, 250, 0.1)" }}
                 />
-                <Bar dataKey="count" radius={[0, 4, 4, 0]} maxBarSize={24}>
+                <Bar
+                  dataKey="count"
+                  radius={[0, 4, 4, 0]}
+                  maxBarSize={24}
+                  isAnimationActive={false}
+                >
                   {chainData.map((entry) => (
                     <Cell key={`chain-${entry.chain}`} fill={entry.color} />
                   ))}
