@@ -257,9 +257,9 @@ function ChartsSection({ chartData, chainProfiles, onBlockClick }) {
                     }}
                   />
                   <Bar dataKey="blobs" radius={[2, 2, 0, 0]} maxBarSize={8}>
-                    {blobsData.map((entry, index) => (
+                    {blobsData.map((entry) => (
                       <Cell
-                        key={`cell-${index}`}
+                        key={`cell-${entry.block}`}
                         fill={getBlobBarColor(entry.blobs)}
                         style={{ cursor: "pointer" }}
                       />
@@ -369,8 +369,8 @@ function ChartsSection({ chartData, chainProfiles, onBlockClick }) {
                   cursor={{ fill: "rgba(167, 139, 250, 0.1)" }}
                 />
                 <Bar dataKey="count" radius={[0, 4, 4, 0]} maxBarSize={24}>
-                  {chainData.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={entry.color} />
+                  {chainData.map((entry) => (
+                    <Cell key={`chain-${entry.chain}`} fill={entry.color} />
                   ))}
                 </Bar>
               </BarChart>
