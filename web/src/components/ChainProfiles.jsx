@@ -66,11 +66,7 @@ function ChainProfiles({ data }) {
   return (
     <>
       <div className="chain-profiles">
-        <div className="profiles-header">
-          <h2 className="section-title">Chain Behavior Profiles</h2>
-          <span className="subtitle">Last 24 hours</span>
-        </div>
-
+        <div className="profiles-header"></div>
         <div className="profiles-grid">
           {topChains.map((chain) => (
             <ChainProfileCard key={chain.chain} profile={chain} />
