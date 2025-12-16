@@ -1,7 +1,7 @@
-import { useMemo } from 'react';
-import { getUtilizationColor } from '../utils/protocol';
+import { useMemo } from "react";
+import { getUtilizationColor } from "../utils/protocol";
 
-const DAYS_OF_WEEK = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+const DAYS_OF_WEEK = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 const HOURS = Array.from({ length: 24 }, (_, i) => i);
 
 function CongestionHeatmap({ data }) {
@@ -43,8 +43,13 @@ function CongestionHeatmap({ data }) {
             border-radius: 8px;
           }
           @keyframes pulse {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.5; }
+            0%,
+            100% {
+              opacity: 1;
+            }
+            50% {
+              opacity: 0.5;
+            }
           }
         `}</style>
       </div>
@@ -66,8 +71,8 @@ function CongestionHeatmap({ data }) {
   // Calculate min/max for color scaling
   const stats = useMemo(() => {
     const utilizations = heatmapData
-      .filter(c => c.block_count > 0)
-      .map(c => c.avg_utilization);
+      .filter((c) => c.block_count > 0)
+      .map((c) => c.avg_utilization);
 
     if (utilizations.length === 0) {
       return { min: 0, max: 100, avg: 50 };
@@ -86,13 +91,11 @@ function CongestionHeatmap({ data }) {
         <div className="heatmap-header">
           <div className="header-left">
             <h2 className="section-title">Congestion Heatmap</h2>
-            <span className="subtitle">Avg utilization by hour & day (UTC) • Last 7 days</span>
+            <span className="subtitle">
+              Avg utilization by hour & day (UTC) • Last 7 days
+            </span>
           </div>
-          <div className="header-right">
-            <div className="protocol-badge">
-              Target: {blob_target} | Max: {blob_max}
-            </div>
-          </div>
+          <div className="header-right"></div>
         </div>
 
         <div className="heatmap-card">
@@ -100,19 +103,28 @@ function CongestionHeatmap({ data }) {
           <div className="stats-row">
             <div className="stat">
               <span className="stat-label">Peak Utilization</span>
-              <span className="stat-value" style={{ color: getUtilizationColor(stats.max) }}>
+              <span
+                className="stat-value"
+                style={{ color: getUtilizationColor(stats.max) }}
+              >
                 {stats.max.toFixed(1)}%
               </span>
             </div>
             <div className="stat">
               <span className="stat-label">Average</span>
-              <span className="stat-value" style={{ color: getUtilizationColor(stats.avg) }}>
+              <span
+                className="stat-value"
+                style={{ color: getUtilizationColor(stats.avg) }}
+              >
                 {stats.avg.toFixed(1)}%
               </span>
             </div>
             <div className="stat">
               <span className="stat-label">Minimum</span>
-              <span className="stat-value" style={{ color: getUtilizationColor(stats.min) }}>
+              <span
+                className="stat-value"
+                style={{ color: getUtilizationColor(stats.min) }}
+              >
                 {stats.min.toFixed(1)}%
               </span>
             </div>
@@ -125,7 +137,7 @@ function CongestionHeatmap({ data }) {
               <div className="day-label-spacer"></div>
               {HOURS.filter((_, i) => i % 3 === 0).map((hour) => (
                 <span key={hour} className="hour-label">
-                  {hour.toString().padStart(2, '0')}
+                  {hour.toString().padStart(2, "0")}
                 </span>
               ))}
             </div>
@@ -372,11 +384,13 @@ function HeatmapCell({ cell, day, hour }) {
   const gasPrice = hasData ? cell.avg_gas_price : 0;
   const blockCount = hasData ? cell.block_count : 0;
 
-  const bgColor = hasData ? getUtilizationColor(utilization) : 'var(--border-primary)';
+  const bgColor = hasData
+    ? getUtilizationColor(utilization)
+    : "var(--border-primary)";
   const opacity = hasData ? Math.max(0.3, Math.min(1, utilization / 100)) : 0.2;
 
   const formatGwei = (wei) => {
-    if (!wei) return '0';
+    if (!wei) return "0";
     const gwei = wei / 1e9;
     if (gwei < 0.001) return gwei.toFixed(6);
     if (gwei < 1) return gwei.toFixed(4);
@@ -384,8 +398,8 @@ function HeatmapCell({ cell, day, hour }) {
   };
 
   const tooltipContent = hasData
-    ? `${day} ${hour.toString().padStart(2, '0')}:00 UTC\nUtilization: ${utilization.toFixed(1)}%\nSaturation: ${saturation.toFixed(1)}%\nGas Price: ${formatGwei(gasPrice)} Gwei\nBlocks: ${blockCount}`
-    : `${day} ${hour.toString().padStart(2, '0')}:00 UTC\nNo data`;
+    ? `${day} ${hour.toString().padStart(2, "0")}:00 UTC\nUtilization: ${utilization.toFixed(1)}%\nSaturation: ${saturation.toFixed(1)}%\nGas Price: ${formatGwei(gasPrice)} Gwei\nBlocks: ${blockCount}`
+    : `${day} ${hour.toString().padStart(2, "0")}:00 UTC\nNo data`;
 
   return (
     <div

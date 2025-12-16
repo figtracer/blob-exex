@@ -740,8 +740,10 @@ async fn get_chain_profiles(
                 })
                 .collect();
 
-            // Calculate price sensitivity (correlation between price and blob count)
-            // Negative correlation = sensitive (reduces blobs when price high)
+            // Calculate price timing pattern (correlation between price and blob count)
+            // Negative correlation = posts during off-peak/low-price periods
+            // Positive correlation = posts during peak/high-price periods
+            // Note: This measures timing patterns, not true price responsiveness
             let price_sensitivity = if txs.len() > 10 {
                 let prices: Vec<f64> = txs.iter().map(|(_, _, p)| *p as f64).collect();
                 let blobs: Vec<f64> = txs.iter().map(|(b, _, _)| *b as f64).collect();
