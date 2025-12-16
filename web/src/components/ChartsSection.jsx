@@ -240,6 +240,7 @@ function ChartsSection({ chartData, chainProfiles, onBlockClick }) {
                     strokeDasharray="4 4"
                     strokeWidth={1.5}
                     label={{
+                      opacity: 0.4,
                       position: "right",
                       fill: "#f59e0b",
                       fontSize: 9,
@@ -251,6 +252,7 @@ function ChartsSection({ chartData, chainProfiles, onBlockClick }) {
                     strokeDasharray="4 4"
                     strokeWidth={1.5}
                     label={{
+                      opacity: 0.4,
                       position: "right",
                       fill: "#ef4444",
                       fontSize: 9,
@@ -391,7 +393,7 @@ function ChartsSection({ chartData, chainProfiles, onBlockClick }) {
 
       <style jsx>{`
         .charts-section {
-          margin-bottom: 2rem;
+          margin-bottom: 3rem;
         }
 
         .charts-grid {

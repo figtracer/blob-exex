@@ -13,7 +13,7 @@ function ChainProfiles({ data }) {
         </div>
         <style jsx>{`
           .chain-profiles {
-            margin-bottom: 2rem;
+            margin-bottom: 3rem;
           }
           .profiles-header {
             margin-bottom: 1rem;
@@ -76,7 +76,7 @@ function ChainProfiles({ data }) {
 
       <style jsx>{`
         .chain-profiles {
-          margin-bottom: 2rem;
+          margin-bottom: 3rem;
         }
 
         .profiles-header {

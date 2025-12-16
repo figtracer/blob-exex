@@ -244,7 +244,7 @@ function TablesSection({ blocks, senders, blobTransactions, onBlockClick }) {
 
       <style jsx>{`
         .tables-section {
-          margin-bottom: 2rem;
+          margin-bottom: 3rem;
         }
 
         .tables-grid {

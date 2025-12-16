@@ -130,7 +130,7 @@ function StatsGrid({ stats }) {
           display: grid;
           grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
           gap: 1rem;
-          margin-bottom: 2rem;
+          margin-bottom: 3rem;
         }
 
         .stat-card {
