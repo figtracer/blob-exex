@@ -1,4 +1,4 @@
-import { X } from "lucide-react";
+import { X, Info } from "lucide-react";
 import {
   formatNumber,
   formatBytes,
@@ -74,7 +74,16 @@ function BlockModal({ block, onClose }) {
             {/* Key metrics banner */}
             <div className="metrics-banner">
               <div className="metric-item">
-                <span className="metric-label">Target Utilization</span>
+                <div className="metric-label-with-info">
+                  <span className="metric-label">Target Utilization</span>
+                  <div className="info-tooltip">
+                    <Info size={14} className="info-icon" />
+                    <span className="tooltip-text">
+                      Blobs vs target ({BLOB_TARGET}). Can exceed 100% when
+                      blocks contain more than the target.
+                    </span>
+                  </div>
+                </div>
                 <span
                   className="metric-value"
                   style={{ color: regimeInfo.color }}
@@ -93,7 +102,15 @@ function BlockModal({ block, onClose }) {
                 </div>
               </div>
               <div className="metric-item">
-                <span className="metric-label">Saturation Index</span>
+                <div className="metric-label-with-info">
+                  <span className="metric-label">Saturation Index</span>
+                  <div className="info-tooltip">
+                    <Info size={14} className="info-icon" />
+                    <span className="tooltip-text">
+                      Blobs vs max capacity ({BLOB_MAX}). Always 0-100%.
+                    </span>
+                  </div>
+                </div>
                 <span
                   className="metric-value"
                   style={{ color: regimeInfo.color }}
@@ -420,13 +437,77 @@ function BlockModal({ block, onClose }) {
           padding: 1rem;
         }
 
-        .detail-label {
+        .metric-label-with-info {
+          display: flex;
+          align-items: center;
+          gap: 0.375rem;
+          margin-bottom: 0.25rem;
+        }
+
+        .metric-label {
           font-size: 0.7rem;
           font-weight: 600;
           text-transform: uppercase;
           letter-spacing: 0.05em;
-          color: var(--text-tertiary);
-          margin-bottom: 0.5rem;
+          color: var(--text-secondary);
+        }
+
+        .info-tooltip {
+          position: relative;
+          display: inline-flex;
+          align-items: center;
+        }
+
+        .info-icon {
+          color: var(--text-secondary);
+          cursor: help;
+          opacity: 0.6;
+          transition: opacity 0.2s;
+        }
+
+        .info-icon:hover {
+          opacity: 1;
+        }
+
+        .tooltip-text {
+          visibility: hidden;
+          opacity: 0;
+          position: absolute;
+          bottom: 125%;
+          left: 50%;
+          transform: translateX(-50%);
+          background-color: var(--bg-secondary);
+          color: var(--text-primary);
+          text-align: center;
+          border-radius: 6px;
+          padding: 0.5rem;
+          font-size: 0.75rem;
+          font-weight: 400;
+          text-transform: none;
+          letter-spacing: normal;
+          white-space: nowrap;
+          z-index: 1000;
+          border: 1px solid var(--border-primary);
+          box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+          transition:
+            opacity 0.2s,
+            visibility 0.2s;
+          pointer-events: none;
+        }
+
+        .info-tooltip:hover .tooltip-text {
+          visibility: visible;
+          opacity: 1;
+        }
+
+        .tooltip-text::after {
+          content: "";
+          position: absolute;
+          top: 100%;
+          left: 50%;
+          transform: translateX(-50%);
+          border: 6px solid transparent;
+          border-top-color: var(--bg-secondary);
         }
 
         .detail-value {

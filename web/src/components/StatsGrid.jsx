@@ -1,3 +1,4 @@
+import { Info } from "lucide-react";
 import {
   BLOB_TARGET,
   BLOB_MAX,
@@ -74,6 +75,7 @@ function StatsGrid({ stats }) {
       barValue: targetUtilization,
       barMax: 200,
       barMarker: 100, // 100% marker
+      info: `Blobs vs target (${BLOB_TARGET}). Can exceed 100% when blocks contain more than the target.`,
     },
     {
       title: "Saturation Index",
@@ -83,6 +85,7 @@ function StatsGrid({ stats }) {
       hasBar: true,
       barValue: saturationIndex,
       barMax: 100,
+      info: `Blobs vs max capacity (${BLOB_MAX}). Always 0-100%.`,
     },
     {
       title: "Current Regime",
@@ -102,7 +105,15 @@ function StatsGrid({ stats }) {
       <div className="stats-grid">
         {statCards.map((card, index) => (
           <div key={index} className="stat-card fade-in">
-            <h3 className="stat-title">{card.title}</h3>
+            <div className="stat-title-row">
+              <h3 className="stat-title">{card.title}</h3>
+              {card.info && (
+                <div className="info-tooltip">
+                  <Info size={14} className="info-icon" />
+                  <span className="tooltip-text">{card.info}</span>
+                </div>
+              )}
+            </div>
             <div
               className={`stat-value ${card.customColor ? "" : `stat-value-${card.color}`}`}
               style={card.customColor ? { color: card.customColor } : {}}
@@ -161,13 +172,78 @@ function StatsGrid({ stats }) {
           box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
         }
 
+        .stat-title-row {
+          display: flex;
+          align-items: center;
+          gap: 0.375rem;
+          margin-bottom: 0.5rem;
+        }
+
         .stat-title {
           font-size: 0.75rem;
           font-weight: 600;
           text-transform: uppercase;
           letter-spacing: 0.05em;
           color: var(--text-secondary);
-          margin-bottom: 0.5rem;
+        }
+
+        .info-tooltip {
+          position: relative;
+          display: inline-flex;
+          align-items: center;
+        }
+
+        .info-icon {
+          color: var(--text-secondary);
+          cursor: help;
+          opacity: 0.6;
+          transition: opacity 0.2s;
+        }
+
+        .info-icon:hover {
+          opacity: 1;
+        }
+
+        .tooltip-text {
+          visibility: hidden;
+          opacity: 0;
+          position: absolute;
+          bottom: 125%;
+          left: 50%;
+          transform: translateX(-50%);
+          background-color: var(--bg-secondary);
+          color: var(--text-primary);
+          text-align: center;
+          border-radius: 6px;
+          padding: 0.5rem;
+          font-size: 0.75rem;
+          font-weight: 400;
+          text-transform: none;
+          letter-spacing: normal;
+          white-space: nowrap;
+          z-index: 1000;
+          border: 1px solid var(--border-primary);
+          box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+          transition:
+            opacity 0.2s,
+            visibility 0.2s;
+          pointer-events: none;
+          min-width: 200px;
+        }
+
+        .info-tooltip:hover .tooltip-text {
+          visibility: visible;
+          opacity: 1;
+        }
+
+        .tooltip-text::after {
+          content: "";
+          position: absolute;
+          top: 100%;
+          left: 50%;
+          transform: translateX(-50%);
+          border: 6px solid transparent;
+          border-top-color: var(--bg-secondary);
         }
 
         .stat-value {
