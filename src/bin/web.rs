@@ -110,30 +110,6 @@ struct ChainProfile {
     hourly_activity: Vec<f64>,      // 24 hours, normalized 0-1
 }
 
-// Congestion heatmap data (hour x day)
-#[derive(Serialize)]
-struct CongestionHeatmap {
-    // 7 days x 24 hours = 168 cells
-    data: Vec<HeatmapCell>,
-    blob_target: u64,
-    blob_max: u64,
-}
-
-#[derive(Serialize)]
-struct HeatmapCell {
-    day_of_week: u8, // 0=Sunday, 6=Saturday
-    hour: u8,        // 0-23 UTC
-    avg_utilization: f64,
-    avg_saturation: f64,
-    avg_gas_price: f64,
-    block_count: u64,
-}
-
-#[derive(Deserialize)]
-struct HeatmapQuery {
-    days: Option<u64>, // How many days of history (default 7)
-}
-
 fn identify_chain(address: &str) -> String {
     let addr = address.to_lowercase();
 
@@ -733,97 +709,6 @@ async fn get_chain_profiles(
     Json(profiles)
 }
 
-// Congestion heatmap (hour x day of week)
-async fn get_congestion_heatmap(
-    State(db_path): State<DbPath>,
-    Query(params): Query<HeatmapQuery>,
-) -> Json<CongestionHeatmap> {
-    let conn = open_db(&db_path).expect("Failed to open database");
-
-    let days = params.days.unwrap_or(7);
-    let now = std::time::SystemTime::now()
-        .duration_since(std::time::UNIX_EPOCH)
-        .unwrap()
-        .as_secs() as i64;
-    let time_limit = now - (days as i64 * 86400);
-
-    let mut stmt = conn
-        .prepare(
-            "SELECT block_timestamp, total_blobs, gas_price
-             FROM blocks
-             WHERE block_timestamp >= ?",
-        )
-        .unwrap();
-
-    let rows: Vec<(i64, u64, u64)> = stmt
-        .query_map([time_limit], |row| {
-            Ok((row.get(0)?, row.get(1)?, row.get(2)?))
-        })
-        .unwrap()
-        .filter_map(|r| r.ok())
-        .collect();
-
-    // Group by (day_of_week, hour)
-    // day_of_week: 0=Sunday, 6=Saturday (standard Unix convention)
-    let mut cell_data: HashMap<(u8, u8), Vec<(u64, u64)>> = HashMap::new();
-
-    for (timestamp, total_blobs, gas_price) in rows {
-        // Calculate day of week and hour from Unix timestamp
-        // Unix epoch (Jan 1, 1970) was a Thursday (day 4)
-        let days_since_epoch = timestamp / 86400;
-        let day_of_week = ((days_since_epoch + 4) % 7) as u8; // 0=Sunday
-        let hour = ((timestamp % 86400) / 3600) as u8;
-
-        cell_data
-            .entry((day_of_week, hour))
-            .or_default()
-            .push((total_blobs, gas_price));
-    }
-
-    let mut data: Vec<HeatmapCell> = Vec::new();
-
-    // Generate all 168 cells (7 days x 24 hours)
-    for day in 0..7u8 {
-        for hour in 0..24u8 {
-            let cell = if let Some(blocks) = cell_data.get(&(day, hour)) {
-                let block_count = blocks.len() as u64;
-                let total_blobs: u64 = blocks.iter().map(|(b, _)| b).sum();
-                let total_gas: u64 = blocks.iter().map(|(_, g)| g).sum();
-
-                let avg_blobs = total_blobs as f64 / block_count as f64;
-                let avg_utilization = (avg_blobs / BLOB_TARGET as f64) * 100.0;
-                let avg_saturation = (avg_blobs / BLOB_MAX as f64) * 100.0;
-                let avg_gas_price = total_gas as f64 / block_count as f64;
-
-                HeatmapCell {
-                    day_of_week: day,
-                    hour,
-                    avg_utilization,
-                    avg_saturation,
-                    avg_gas_price,
-                    block_count,
-                }
-            } else {
-                HeatmapCell {
-                    day_of_week: day,
-                    hour,
-                    avg_utilization: 0.0,
-                    avg_saturation: 0.0,
-                    avg_gas_price: 0.0,
-                    block_count: 0,
-                }
-            };
-            data.push(cell);
-        }
-    }
-
-    Json(CongestionHeatmap {
-        data,
-        blob_target: BLOB_TARGET,
-        blob_max: BLOB_MAX,
-    })
-}
-
 async fn index() -> impl IntoResponse {
     (
         [(header::CONTENT_TYPE, "text/html")],
@@ -851,7 +736,6 @@ async fn main() -> eyre::Result<()> {
         .route("/api/chart", get(get_chart_data))
         .route("/api/blob-transactions", get(get_blob_transactions))
         .route("/api/chain-profiles", get(get_chain_profiles))
-        .route("/api/congestion-heatmap", get(get_congestion_heatmap))
         .nest_service("/assets", ServeDir::new(format!("{}/assets", static_dir)))
         .nest_service("/icons", ServeDir::new(format!("{}/icons", static_dir)))
         .layer(CorsLayer::permissive())
