@@ -4,7 +4,6 @@ import StatsGrid from "./components/StatsGrid";
 import TablesSection from "./components/TablesSection";
 import BlockModal from "./components/BlockModal";
 import Footer from "./components/Footer";
-import RollingComparison from "./components/RollingComparison";
 import ChainProfiles from "./components/ChainProfiles";
 import CongestionHeatmap from "./components/CongestionHeatmap";
 
@@ -22,8 +21,7 @@ function App() {
   const [lastUpdate, setLastUpdate] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  // New state for derived metrics
-  const [rollingComparison, setRollingComparison] = useState(null);
+  // State for derived metrics
   const [chainProfiles, setChainProfiles] = useState([]);
   const [congestionHeatmap, setCongestionHeatmap] = useState(null);
 
@@ -36,7 +34,6 @@ function App() {
         sendersRes,
         chartRes,
         txsRes,
-        rollingRes,
         profilesRes,
         heatmapRes,
       ] = await Promise.all([
@@ -45,7 +42,6 @@ function App() {
         fetch("/api/senders"),
         fetch(`/api/chart?blocks=${selectedBlocks}`),
         fetch("/api/blob-transactions"),
-        fetch("/api/rolling-comparison"),
         fetch("/api/chain-profiles"),
         fetch("/api/congestion-heatmap"),
       ]);
@@ -55,7 +51,6 @@ function App() {
       if (sendersRes.ok) setSenders(await sendersRes.json());
       if (chartRes.ok) setChartData(await chartRes.json());
       if (txsRes.ok) setBlobTransactions(await txsRes.json());
-      if (rollingRes.ok) setRollingComparison(await rollingRes.json());
       if (profilesRes.ok) setChainProfiles(await profilesRes.json());
       if (heatmapRes.ok) setCongestionHeatmap(await heatmapRes.json());
 
@@ -112,9 +107,7 @@ function App() {
           </div>
         ) : (
           <>
-            <StatsGrid stats={stats} rollingData={rollingComparison} />
-
-            <RollingComparison data={rollingComparison} />
+            <StatsGrid stats={stats} />
 
             <Suspense fallback={<ChartsSkeleton />}>
               <ChartsSection

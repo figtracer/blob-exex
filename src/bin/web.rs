@@ -99,42 +99,6 @@ struct BlockQuery {
     block_number: u64,
 }
 
-// Rolling comparison stats (1h vs 24h vs baseline)
-#[derive(Serialize)]
-struct RollingComparison {
-    // Current hour metrics
-    hour_1: PeriodStats,
-    // Last 24 hours metrics
-    hour_24: PeriodStats,
-    // 7-day baseline for comparison
-    baseline_7d: PeriodStats,
-    // Protocol constants for frontend
-    blob_target: u64,
-    blob_max: u64,
-}
-
-#[derive(Serialize)]
-struct PeriodStats {
-    total_blobs: u64,
-    total_transactions: u64,
-    avg_blobs_per_block: f64,
-    avg_gas_price: f64,
-    avg_utilization: f64,
-    avg_saturation: f64,
-    block_count: u64,
-    // Regime distribution
-    regime_counts: RegimeCounts,
-}
-
-#[derive(Serialize)]
-struct RegimeCounts {
-    abundant: u64,
-    normal: u64,
-    pressured: u64,
-    congested: u64,
-    saturated: u64,
-}
-
 // Chain behavior profile (also serves as chain stats)
 #[derive(Serialize)]
 struct ChainProfile {
@@ -687,112 +651,6 @@ async fn get_block(
     }
 }
 
-// Rolling comparison: 1h vs 24h vs 7d baseline
-async fn get_rolling_comparison(State(db_path): State<DbPath>) -> Json<RollingComparison> {
-    let conn = open_db(&db_path).expect("Failed to open database");
-
-    let now = std::time::SystemTime::now()
-        .duration_since(std::time::UNIX_EPOCH)
-        .unwrap()
-        .as_secs() as i64;
-
-    let hour_1_start = now - 3600;
-    let hour_24_start = now - 86400;
-    let baseline_start = now - (7 * 86400);
-
-    fn compute_period_stats(conn: &Connection, start_time: i64, end_time: i64) -> PeriodStats {
-        let mut stmt = conn
-            .prepare(
-                "SELECT total_blobs, tx_count, gas_price
-                 FROM blocks
-                 WHERE block_timestamp >= ? AND block_timestamp < ?",
-            )
-            .unwrap();
-
-        let rows: Vec<(u64, u64, u64)> = stmt
-            .query_map([start_time, end_time], |row| {
-                Ok((row.get(0)?, row.get(1)?, row.get(2)?))
-            })
-            .unwrap()
-            .filter_map(|r| r.ok())
-            .collect();
-
-        let block_count = rows.len() as u64;
-        if block_count == 0 {
-            return PeriodStats {
-                total_blobs: 0,
-                total_transactions: 0,
-                avg_blobs_per_block: 0.0,
-                avg_gas_price: 0.0,
-                avg_utilization: 0.0,
-                avg_saturation: 0.0,
-                block_count: 0,
-                regime_counts: RegimeCounts {
-                    abundant: 0,
-                    normal: 0,
-                    pressured: 0,
-                    congested: 0,
-                    saturated: 0,
-                },
-            };
-        }
-
-        let total_blobs: u64 = rows.iter().map(|(b, _, _)| b).sum();
-        let total_transactions: u64 = rows.iter().map(|(_, t, _)| t).sum();
-        let total_gas_price: u64 = rows.iter().map(|(_, _, g)| g).sum();
-
-        let mut regime_counts = RegimeCounts {
-            abundant: 0,
-            normal: 0,
-            pressured: 0,
-            congested: 0,
-            saturated: 0,
-        };
-
-        let mut total_utilization = 0.0;
-        let mut total_saturation = 0.0;
-
-        for (blobs, _, _) in &rows {
-            let utilization = (*blobs as f64 / BLOB_TARGET as f64) * 100.0;
-            let saturation = (*blobs as f64 / BLOB_MAX as f64) * 100.0;
-            total_utilization += utilization;
-            total_saturation += saturation;
-
-            match classify_regime(*blobs).as_str() {
-                "abundant" => regime_counts.abundant += 1,
-                "normal" => regime_counts.normal += 1,
-                "pressured" => regime_counts.pressured += 1,
-                "congested" => regime_counts.congested += 1,
-                "saturated" => regime_counts.saturated += 1,
-                _ => {}
-            }
-        }
-
-        PeriodStats {
-            total_blobs,
-            total_transactions,
-            avg_blobs_per_block: total_blobs as f64 / block_count as f64,
-            avg_gas_price: total_gas_price as f64 / block_count as f64,
-            avg_utilization: total_utilization / block_count as f64,
-            avg_saturation: total_saturation / block_count as f64,
-            block_count,
-            regime_counts,
-        }
-    }
-
-    let hour_1 = compute_period_stats(&conn, hour_1_start, now);
-    let hour_24 = compute_period_stats(&conn, hour_24_start, now);
-    let baseline_7d = compute_period_stats(&conn, baseline_start, now);
-
-    Json(RollingComparison {
-        hour_1,
-        hour_24,
-        baseline_7d,
-        blob_target: BLOB_TARGET,
-        blob_max: BLOB_MAX,
-    })
-}
-
 // Chain behavior profiles (replaces chain-stats - superset of that data)
 async fn get_chain_profiles(
     State(db_path): State<DbPath>,
@@ -1049,7 +907,6 @@ async fn main() -> eyre::Result<()> {
         .route("/api/senders", get(get_top_senders))
         .route("/api/chart", get(get_chart_data))
         .route("/api/blob-transactions", get(get_blob_transactions))
-        .route("/api/rolling-comparison", get(get_rolling_comparison))
         .route("/api/chain-profiles", get(get_chain_profiles))
         .route("/api/congestion-heatmap", get(get_congestion_heatmap))
         .nest_service("/assets", ServeDir::new(format!("{}/assets", static_dir)))

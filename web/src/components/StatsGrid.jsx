@@ -6,7 +6,7 @@ import {
   classifyRegime,
 } from "../utils/protocol";
 
-function StatsGrid({ stats, rollingData }) {
+function StatsGrid({ stats }) {
   if (!stats) {
     return (
       <div className="stats-grid">
@@ -41,9 +41,8 @@ function StatsGrid({ stats, rollingData }) {
     return gwei.toFixed(2) + " Gwei";
   };
 
-  // Calculate utilization and saturation from rolling data or avg
-  const avgBlobs =
-    rollingData?.hour_1?.avg_blobs_per_block ?? stats.avg_blobs_per_block ?? 0;
+  // Calculate utilization and saturation from avg blobs per block
+  const avgBlobs = stats.avg_blobs_per_block ?? 0;
   const targetUtilization = (avgBlobs / BLOB_TARGET) * 100;
   const saturationIndex = (avgBlobs / BLOB_MAX) * 100;
   const regime = classifyRegime(avgBlobs);
