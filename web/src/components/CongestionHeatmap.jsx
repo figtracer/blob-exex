@@ -422,7 +422,7 @@ function HeatmapCell({ cell, day, hour }) {
         }
 
         .heatmap-cell:hover {
-          opacity: 1 !important;
+          opacity: 0;
           transform: scale(1.2);
           z-index: 10;
         }
