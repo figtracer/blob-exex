@@ -240,7 +240,6 @@ function ChartsSection({ chartData, chainProfiles, onBlockClick }) {
                     strokeDasharray="4 4"
                     strokeWidth={1.5}
                     label={{
-                      value: `Target (${BLOB_TARGET})`,
                       position: "right",
                       fill: "#f59e0b",
                       fontSize: 9,
@@ -252,7 +251,6 @@ function ChartsSection({ chartData, chainProfiles, onBlockClick }) {
                     strokeDasharray="4 4"
                     strokeWidth={1.5}
                     label={{
-                      value: `Max (${BLOB_MAX})`,
                       position: "right",
                       fill: "#ef4444",
                       fontSize: 9,

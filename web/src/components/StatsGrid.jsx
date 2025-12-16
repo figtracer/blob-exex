@@ -108,10 +108,10 @@ function StatsGrid({ stats }) {
             <div className="stat-title-row">
               <h3 className="stat-title">{card.title}</h3>
               {card.info && (
-                <div className="info-tooltip">
-                  <Info size={14} className="info-icon" />
+                <span className="info-tooltip">
+                  <Info size={11} className="info-icon" />
                   <span className="tooltip-text">{card.info}</span>
-                </div>
+                </span>
               )}
             </div>
             <div
@@ -191,44 +191,47 @@ function StatsGrid({ stats }) {
           position: relative;
           display: inline-flex;
           align-items: center;
+          margin-left: 2px;
         }
 
         .info-icon {
           color: var(--text-secondary);
           cursor: help;
-          opacity: 0.6;
+          opacity: 0.4;
           transition: opacity 0.2s;
+          width: 12px;
+          height: 12px;
         }
 
-        .info-icon:hover {
-          opacity: 1;
+        .info-tooltip:hover .info-icon {
+          opacity: 0.8;
         }
 
         .tooltip-text {
           visibility: hidden;
           opacity: 0;
           position: absolute;
-          bottom: 125%;
+          bottom: calc(100% + 6px);
           left: 50%;
           transform: translateX(-50%);
-          background-color: var(--bg-secondary);
+          background-color: rgba(0, 0, 0, 0.9);
           color: var(--text-primary);
-          text-align: center;
-          border-radius: 6px;
-          padding: 0.5rem;
-          font-size: 0.75rem;
+          text-align: left;
+          border-radius: 4px;
+          padding: 6px 8px;
+          font-size: 0.65rem;
           font-weight: 400;
           text-transform: none;
           letter-spacing: normal;
-          white-space: nowrap;
+          line-height: 1.4;
+          white-space: normal;
+          width: 180px;
           z-index: 1000;
-          border: 1px solid var(--border-primary);
-          box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+          box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
           transition:
-            opacity 0.2s,
-            visibility 0.2s;
+            opacity 0.15s,
+            visibility 0.15s;
           pointer-events: none;
-          min-width: 200px;
         }
 
         .info-tooltip:hover .tooltip-text {
@@ -242,8 +245,8 @@ function StatsGrid({ stats }) {
           top: 100%;
           left: 50%;
           transform: translateX(-50%);
-          border: 6px solid transparent;
-          border-top-color: var(--bg-secondary);
+          border: 4px solid transparent;
+          border-top-color: rgba(0, 0, 0, 0.9);
         }
 
         .stat-value {

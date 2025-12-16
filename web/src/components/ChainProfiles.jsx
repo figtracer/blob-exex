@@ -53,9 +53,14 @@ function ChainProfiles({ data }) {
     );
   }
 
-  // Filter to top chains with meaningful data
+  // Filter to top chains with meaningful data, excluding "Other"
   const topChains = useMemo(() => {
-    return data.filter((chain) => chain.total_transactions > 0).slice(0, 10);
+    return data
+      .filter(
+        (chain) =>
+          chain.total_transactions > 0 && chain.chain.toLowerCase() !== "other",
+      )
+      .slice(0, 12);
   }, [data]);
 
   return (
