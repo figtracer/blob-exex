@@ -8,7 +8,7 @@ import {
   truncateAddress,
 } from "../utils/format";
 import ChainBadge from "./ChainBadge";
-import { BLOB_TARGET, BLOB_MAX } from "../utils/protocol";
+import { BLOB_TARGET, BLOB_MAX, getUtilizationColor } from "../utils/protocol";
 
 function TablesSection({ blocks, senders, blobTransactions, onBlockClick }) {
   // Memoize sliced data to prevent re-computation
@@ -179,6 +179,7 @@ function TablesSection({ blocks, senders, blobTransactions, onBlockClick }) {
                     ((block.total_blobs || 0) / BLOB_TARGET) * 100;
                   const saturation =
                     ((block.total_blobs || 0) / BLOB_MAX) * 100;
+                  const utilizationColor = getUtilizationColor(utilization);
 
                   return (
                     <tr
@@ -210,7 +211,10 @@ function TablesSection({ blocks, senders, blobTransactions, onBlockClick }) {
                       </td>
                       <td>
                         <div className="utilization-cell">
-                          <span className="number">
+                          <span
+                            className="number"
+                            style={{ color: utilizationColor }}
+                          >
                             {utilization.toFixed(0)}%
                           </span>
                           <div className="mini-bar">
@@ -218,6 +222,7 @@ function TablesSection({ blocks, senders, blobTransactions, onBlockClick }) {
                               className="mini-bar-fill"
                               style={{
                                 width: `${Math.min(saturation, 100)}%`,
+                                backgroundColor: utilizationColor,
                               }}
                             />
                           </div>

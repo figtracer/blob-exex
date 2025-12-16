@@ -7,7 +7,13 @@ import {
   truncateHash,
 } from "../utils/format";
 import ChainBadge from "./ChainBadge";
-import { BLOB_TARGET, BLOB_MAX, DATA_GAS_PER_BLOB } from "../utils/protocol";
+import {
+  BLOB_TARGET,
+  BLOB_MAX,
+  DATA_GAS_PER_BLOB,
+  getUtilizationColor,
+  getSaturationColor,
+} from "../utils/protocol";
 
 function BlockModal({ block, onClose }) {
   if (!block) return null;
@@ -29,6 +35,8 @@ function BlockModal({ block, onClose }) {
   // Derived metrics
   const targetUtilization = (totalBlobs / BLOB_TARGET) * 100;
   const saturationIndex = (totalBlobs / BLOB_MAX) * 100;
+  const utilizationColor = getUtilizationColor(targetUtilization);
+  const saturationColor = getSaturationColor(saturationIndex);
 
   const handleOverlayClick = (e) => {
     if (e.target === e.currentTarget) {
@@ -58,7 +66,10 @@ function BlockModal({ block, onClose }) {
             <div className="metrics-banner">
               <div className="metric-item">
                 <span className="metric-label">Target Utilization</span>
-                <span className="metric-value">
+                <span
+                  className="metric-value"
+                  style={{ color: utilizationColor }}
+                >
                   {targetUtilization.toFixed(1)}%
                 </span>
                 <div className="metric-bar">
@@ -66,6 +77,7 @@ function BlockModal({ block, onClose }) {
                     className="metric-bar-fill"
                     style={{
                       width: `${Math.min(targetUtilization / 2, 100)}%`,
+                      backgroundColor: utilizationColor,
                     }}
                   />
                   <div className="metric-bar-marker" title="Target (100%)" />
@@ -73,7 +85,10 @@ function BlockModal({ block, onClose }) {
               </div>
               <div className="metric-item">
                 <span className="metric-label">Saturation Index</span>
-                <span className="metric-value">
+                <span
+                  className="metric-value"
+                  style={{ color: saturationColor }}
+                >
                   {saturationIndex.toFixed(1)}%
                 </span>
                 <div className="metric-bar">
@@ -81,6 +96,7 @@ function BlockModal({ block, onClose }) {
                     className="metric-bar-fill"
                     style={{
                       width: `${Math.min(saturationIndex, 100)}%`,
+                      backgroundColor: saturationColor,
                     }}
                   />
                 </div>
