@@ -44,13 +44,48 @@ function StatsGrid({ stats, chainProfiles }) {
       .filter((profile) => profile.total_blobs > 0)
       .sort((a, b) => b.total_blobs - a.total_blobs);
 
-    const data = filtered.map((profile) => {
+    // Generate gradient colors based on rank
+    const generateGradientColor = (index, total) => {
+      // Create smooth gradient with extended color range for better distinction
+      // Largest slice = darkest, smallest = lightest
+      // Color stops: dark indigo -> indigo -> blue -> light blue -> cyan
+      const ratio = total > 1 ? index / (total - 1) : 0;
+
+      // Extended gradient with 5 color stops for more variety
+      const colorStops = [
+        { r: 55, g: 48, b: 163 }, // #3730a3 - darker indigo (largest)
+        { r: 79, g: 70, b: 229 }, // #4f46e5 - indigo
+        { r: 59, g: 130, b: 246 }, // #3b82f6 - blue
+        { r: 96, g: 165, b: 250 }, // #60a5fa - light blue
+        { r: 125, g: 211, b: 252 }, // #7dd3fc - cyan (smallest)
+      ];
+
+      // Find which segment of the gradient we're in
+      const segmentSize = 1 / (colorStops.length - 1);
+      const segmentIndex = Math.min(
+        Math.floor(ratio / segmentSize),
+        colorStops.length - 2,
+      );
+      const segmentRatio = (ratio - segmentIndex * segmentSize) / segmentSize;
+
+      // Interpolate between the two color stops
+      const start = colorStops[segmentIndex];
+      const end = colorStops[segmentIndex + 1];
+
+      const r = Math.round(start.r + (end.r - start.r) * segmentRatio);
+      const g = Math.round(start.g + (end.g - start.g) * segmentRatio);
+      const b = Math.round(start.b + (end.b - start.b) * segmentRatio);
+
+      return `rgb(${r}, ${g}, ${b})`;
+    };
+
+    const data = filtered.map((profile, index) => {
       const percentage =
         allTotal > 0 ? ((profile.total_blobs || 0) / allTotal) * 100 : 0;
       return {
         chain: profile.chain || "Unknown",
         count: profile.total_blobs || 0,
-        color: getPercentageColor(percentage),
+        color: generateGradientColor(index, filtered.length),
         percentage,
       };
     });
@@ -116,13 +151,14 @@ function StatsGrid({ stats, chainProfiles }) {
     {
       title: "Blob Gas Price",
       value: formatGwei(stats.latest_gas_price),
-      color: "blue",
+      color: "white",
     },
     {
       title: "Avg Blobs/Block",
       value: stats.avg_blobs_per_block?.toFixed(2) || "0",
       subtitle: `Target: ${BLOB_TARGET} | Max: ${BLOB_MAX}`,
-      color: "blue",
+      color: getSaturationColorName(saturationIndex),
+      customColor: getSaturationColor(saturationIndex),
     },
     {
       title: "Target Utilization",

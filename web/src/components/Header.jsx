@@ -177,7 +177,7 @@ function Header({ selectedBlocks, onBlocksChange, lastUpdate }) {
           position: absolute;
           top: calc(100% + 0.5rem);
           right: 0;
-          min-width: 200px;
+          min-width: 160px;
           background: var(--bg-secondary);
           border: 1px solid var(--border-primary);
           border-radius: 8px;
@@ -187,12 +187,12 @@ function Header({ selectedBlocks, onBlocksChange, lastUpdate }) {
         }
 
         .dropdown-section {
-          padding: 0.5rem 0;
+          padding: 0.25rem 0;
         }
 
         .dropdown-label {
-          padding: 0.5rem 1rem;
-          font-size: 0.75rem;
+          padding: 0.375rem 0.75rem;
+          font-size: 0.6875rem;
           font-weight: 600;
           text-transform: uppercase;
           letter-spacing: 0.05em;
@@ -202,7 +202,7 @@ function Header({ selectedBlocks, onBlocksChange, lastUpdate }) {
         .dropdown-option {
           display: block;
           width: 100%;
-          padding: 0.5rem 1rem;
+          padding: 0.4rem 0.75rem;
           background: none;
           border: none;
           text-align: left;
@@ -216,7 +216,7 @@ function Header({ selectedBlocks, onBlocksChange, lastUpdate }) {
             Oxygen,
             Ubuntu,
             sans-serif;
-          font-size: 0.875rem;
+          font-size: 0.8125rem;
           cursor: pointer;
           transition: all 0.15s;
         }
@@ -240,7 +240,7 @@ function Header({ selectedBlocks, onBlocksChange, lastUpdate }) {
         .status-dot {
           width: 8px;
           height: 8px;
-          background: var(--success);
+          background: #10b981;
           border-radius: 50%;
           animation: pulse 2s infinite;
         }

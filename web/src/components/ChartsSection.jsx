@@ -21,25 +21,25 @@ import {
 
 const tooltipStyles = {
   container: {
-    background: "#16161f",
+    background: "#0a0a0f",
     border: "1px solid #252530",
     borderRadius: "8px",
-    padding: "0.75rem 1rem",
-    boxShadow: "0 4px 12px rgba(0, 0, 0, 0.4)",
+    padding: "0.75rem",
+    boxShadow: "0 4px 12px rgba(0, 0, 0, 0.3)",
   },
   label: {
-    fontSize: "0.7rem",
+    fontSize: "0.6875rem",
     fontWeight: 600,
     textTransform: "uppercase",
     letterSpacing: "0.05em",
     color: "#71717a",
-    marginBottom: "0.5rem",
+    marginBottom: "0.375rem",
     margin: 0,
   },
   value: {
     fontSize: "0.875rem",
-    fontWeight: 600,
-    margin: "0.25rem 0",
+    fontWeight: 700,
+    margin: 0,
   },
 };
 
@@ -57,6 +57,20 @@ const CustomTooltip = ({ active, payload, label, valueFormatter }) => {
             {valueFormatter ? valueFormatter(entry.value) : entry.value}
           </p>
         ))}
+      </div>
+    );
+  }
+  return null;
+};
+
+const BlobTooltip = ({ active, payload, label }) => {
+  if (active && payload && payload.length) {
+    const blobCount = payload[0].value;
+    const color = getBlobBarColor(blobCount);
+    return (
+      <div style={tooltipStyles.container}>
+        <p style={tooltipStyles.label}>{label}</p>
+        <p style={{ ...tooltipStyles.value, color }}>blobs: {blobCount}</p>
       </div>
     );
   }
@@ -165,7 +179,7 @@ function ChartsSection({ chartData, onBlockClick }) {
                     width={40}
                   />
                   <Tooltip
-                    content={<CustomTooltip />}
+                    content={<BlobTooltip />}
                     cursor={{
                       fill: "rgba(59, 130, 246, 0.1)",
                       cursor: "pointer",
@@ -173,13 +187,13 @@ function ChartsSection({ chartData, onBlockClick }) {
                   />
                   <ReferenceLine
                     y={BLOB_TARGET}
-                    stroke="#4f46e5"
+                    stroke="#3b82f6"
                     strokeDasharray="4 4"
-                    strokeWidth={1.5}
+                    strokeWidth={1}
                     fillOpacity={0.3}
                     label={{
                       position: "right",
-                      fill: "#4f46e5",
+                      fill: "#3b82f6",
                       fontSize: 9,
                     }}
                   />
@@ -187,7 +201,7 @@ function ChartsSection({ chartData, onBlockClick }) {
                     y={BLOB_MAX}
                     stroke="#4f46e5"
                     strokeDasharray="4 4"
-                    strokeWidth={1.5}
+                    strokeWidth={1}
                     fillOpacity={0.3}
                     label={{
                       position: "right",
@@ -246,21 +260,17 @@ function ChartsSection({ chartData, onBlockClick }) {
                   />
                   <Tooltip
                     content={<CustomTooltip valueFormatter={formatGweiChart} />}
-                    cursor={{
-                      stroke: BASE_BLUE,
-                      strokeWidth: 1,
-                      cursor: "pointer",
-                    }}
+                    cursor={false}
                   />
                   <Line
                     type="monotone"
                     dataKey="price"
-                    stroke={BASE_BLUE}
+                    stroke="#ffffff"
                     strokeWidth={2}
                     dot={false}
                     activeDot={{
                       r: 4,
-                      fill: BASE_BLUE,
+                      fill: "#ffffff",
                       stroke: "#16161f",
                       strokeWidth: 2,
                       cursor: "pointer",
