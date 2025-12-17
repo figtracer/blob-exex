@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from "react";
-import { Search, Clock, Info, Loader2 } from "lucide-react";
+import { Clock } from "lucide-react";
 
 const BLOCK_OPTIONS = [
   { value: 50, label: "Last 50 blocks" },
@@ -9,72 +9,9 @@ const BLOCK_OPTIONS = [
   { value: 1000, label: "Last 1000 blocks" },
 ];
 
-function Header({
-  onSearch,
-  selectedBlocks,
-  onBlocksChange,
-  lastUpdate,
-  stats,
-}) {
-  const [searchValue, setSearchValue] = useState("");
+function Header({ selectedBlocks, onBlocksChange, lastUpdate }) {
   const [dropdownOpen, setDropdownOpen] = useState(false);
-  const [isSearching, setIsSearching] = useState(false);
-  const [searchError, setSearchError] = useState("");
-  const [showInfoTooltip, setShowInfoTooltip] = useState(false);
   const dropdownRef = useRef(null);
-  const searchInputRef = useRef(null);
-  const infoRef = useRef(null);
-
-  const handleSearch = async (e) => {
-    e.preventDefault();
-    const blockNumber = parseInt(searchValue);
-
-    // Clear previous error
-    setSearchError("");
-
-    if (isNaN(blockNumber) || blockNumber <= 0) {
-      setSearchError("Please enter a valid block number");
-      return;
-    }
-
-    setIsSearching(true);
-
-    try {
-      const result = await onSearch(blockNumber);
-      if (result === false) {
-        // Show a more helpful error message with available block range
-        if (stats?.earliest_block && stats?.latest_block) {
-          if (blockNumber < stats.earliest_block) {
-            setSearchError(
-              `Block #${blockNumber} not found. First available: ${stats.earliest_block.toLocaleString()}`,
-            );
-          } else if (blockNumber > stats.latest_block) {
-            setSearchError(
-              `Block #${blockNumber} not found. Latest: ${stats.latest_block.toLocaleString()}`,
-            );
-          } else {
-            setSearchError(`Block #${blockNumber} not found in database`);
-          }
-        } else {
-          setSearchError(`Block #${blockNumber} not found`);
-        }
-      } else {
-        setSearchValue("");
-      }
-    } catch (error) {
-      setSearchError("Failed to search block");
-    } finally {
-      setIsSearching(false);
-    }
-  };
-
-  // Clear error after 4 seconds
-  useEffect(() => {
-    if (searchError) {
-      const timer = setTimeout(() => setSearchError(""), 4000);
-      return () => clearTimeout(timer);
-    }
-  }, [searchError]);
 
   const formatLastUpdate = () => {
     if (!lastUpdate) return "Connecting...";
@@ -90,9 +27,6 @@ function Header({
       if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
         setDropdownOpen(false);
       }
-      if (infoRef.current && !infoRef.current.contains(event.target)) {
-        setShowInfoTooltip(false);
-      }
     };
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
@@ -102,70 +36,19 @@ function Header({
     BLOCK_OPTIONS.find((opt) => opt.value === selectedBlocks)?.label ||
     "Last 100 blocks";
 
-  const blockRangeInfo =
-    stats?.earliest_block && stats?.latest_block
-      ? `Available blocks: ${stats.earliest_block.toLocaleString()} - ${stats.latest_block.toLocaleString()}`
-      : "Loading block range...";
-
   return (
     <>
       <div className="controls-bar">
         <div className="controls-content">
-          <div className="search-container">
-            <form className="search-form" onSubmit={handleSearch}>
-              <div className="search-input-wrapper">
-                <Search size={16} className="search-icon" />
-                <input
-                  ref={searchInputRef}
-                  type="text"
-                  className={`search-input ${searchError ? "has-error" : ""}`}
-                  placeholder="Search block number..."
-                  value={searchValue}
-                  onChange={(e) => {
-                    setSearchValue(e.target.value);
-                    setSearchError("");
-                  }}
-                  disabled={isSearching}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter") {
-                      handleSearch(e);
-                    }
-                  }}
-                />
-                {isSearching && (
-                  <Loader2 size={16} className="search-loading" />
-                )}
-              </div>
-            </form>
-
-            <div className="info-wrapper" ref={infoRef}>
-              <button
-                className="info-button"
-                onClick={() => setShowInfoTooltip(!showInfoTooltip)}
-                onMouseEnter={() => setShowInfoTooltip(true)}
-                onMouseLeave={() => setShowInfoTooltip(false)}
-                aria-label="Block range info"
-              >
-                <Info size={16} />
-              </button>
-              {showInfoTooltip && (
-                <div className="info-tooltip">{blockRangeInfo}</div>
-              )}
-            </div>
-
-            {searchError && (
-              <div className="search-error">
-                <span>{searchError}</span>
-              </div>
-            )}
-          </div>
-
-          <div className="controls-right">
+          <div className="controls-left">
             <img
               src="/icons/favicon.png?v=3"
               alt="EXBLOB"
               className="header-favicon"
             />
+          </div>
+
+          <div className="controls-right">
             <div className="time-picker" ref={dropdownRef}>
               <button
                 className="time-picker-button"
@@ -232,182 +115,12 @@ function Header({
           display: flex;
           justify-content: space-between;
           align-items: center;
-          gap: 1.5rem;
+          gap: 1rem;
         }
 
-        .search-container {
+        .controls-left {
           display: flex;
           align-items: center;
-          gap: 0.5rem;
-          position: relative;
-          flex: 1;
-          max-width: 400px;
-        }
-
-        .search-form {
-          flex: 1;
-        }
-
-        .search-input-wrapper {
-          position: relative;
-          display: flex;
-          align-items: center;
-        }
-
-        .search-icon {
-          position: absolute;
-          left: 12px;
-          color: var(--text-tertiary);
-          pointer-events: none;
-        }
-
-        .search-loading {
-          position: absolute;
-          right: 12px;
-          color: var(--accent-purple);
-          animation: spin 1s linear infinite;
-        }
-
-        .search-input {
-          width: 100%;
-          padding: 0.5rem 2.5rem 0.5rem 2.5rem;
-          background: var(--bg-tertiary);
-          border: 1px solid var(--border-primary);
-          border-radius: 8px;
-          color: var(--text-primary);
-          font-size: 0.875rem;
-          transition: all 0.2s;
-        }
-
-        .search-input:hover:not(:disabled) {
-          border-color: var(--border-secondary);
-          background: var(--bg-card);
-        }
-
-        .search-input:focus {
-          outline: none;
-          border-color: var(--accent-purple);
-          background: var(--bg-card);
-          box-shadow: 0 0 0 3px rgba(167, 139, 250, 0.1);
-        }
-
-        .search-input::placeholder {
-          color: var(--text-tertiary);
-        }
-
-        .search-input:disabled {
-          opacity: 0.6;
-          cursor: not-allowed;
-        }
-
-        .search-input.has-error {
-          border-color: var(--error);
-          background: rgba(239, 68, 68, 0.05);
-        }
-
-        .info-wrapper {
-          position: relative;
-        }
-
-        .info-button {
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          width: 32px;
-          height: 32px;
-          background: var(--bg-tertiary);
-          border: 1px solid var(--border-primary);
-          border-radius: 6px;
-          color: var(--text-tertiary);
-          cursor: pointer;
-          transition: all 0.2s;
-        }
-
-        .info-button:hover {
-          border-color: var(--border-secondary);
-          color: var(--text-secondary);
-          background: var(--bg-card);
-        }
-
-        .info-tooltip {
-          position: absolute;
-          top: calc(100% + 0.5rem);
-          left: 50%;
-          transform: translateX(-50%);
-          padding: 0.5rem 0.75rem;
-          background: var(--bg-secondary);
-          border: 1px solid var(--border-primary);
-          border-radius: 6px;
-          color: var(--text-secondary);
-          font-size: 0.75rem;
-          white-space: nowrap;
-          z-index: 100;
-          box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
-          animation: fadeIn 0.15s ease-out;
-        }
-
-        .info-tooltip::before {
-          content: "";
-          position: absolute;
-          top: -5px;
-          left: 50%;
-          transform: translateX(-50%);
-          border-left: 5px solid transparent;
-          border-right: 5px solid transparent;
-          border-bottom: 5px solid var(--border-primary);
-        }
-
-        .search-error {
-          position: absolute;
-          top: calc(100% + 0.5rem);
-          left: 0;
-          right: 0;
-          display: flex;
-          align-items: center;
-          gap: 0.5rem;
-          padding: 0.5rem 0.75rem;
-          background: rgba(239, 68, 68, 0.1);
-          border: 1px solid rgba(239, 68, 68, 0.3);
-          border-radius: 6px;
-          color: var(--error);
-          font-size: 0.75rem;
-          animation: fadeIn 0.2s ease-out;
-          z-index: 50;
-        }
-
-        @keyframes fadeIn {
-          from {
-            opacity: 0;
-            transform: translateY(-4px);
-          }
-          to {
-            opacity: 1;
-            transform: translateY(0);
-          }
-        }
-
-        .info-tooltip {
-          animation: fadeInTooltip 0.15s ease-out;
-        }
-
-        @keyframes fadeInTooltip {
-          from {
-            opacity: 0;
-            transform: translateX(-50%) translateY(-4px);
-          }
-          to {
-            opacity: 1;
-            transform: translateX(-50%) translateY(0);
-          }
-        }
-
-        @keyframes spin {
-          from {
-            transform: rotate(0deg);
-          }
-          to {
-            transform: rotate(360deg);
-          }
         }
 
         .controls-right {
@@ -417,8 +130,8 @@ function Header({
         }
 
         .header-favicon {
-          width: 24px;
-          height: 24px;
+          width: 32px;
+          height: 32px;
           opacity: 0.8;
           transition: opacity 0.2s;
         }
@@ -434,8 +147,8 @@ function Header({
         .time-picker-button {
           display: flex;
           align-items: center;
-          gap: 0.5rem;
-          padding: 0.5rem 0.75rem;
+          gap: 0.35rem;
+          padding: 0.35rem 0.5rem;
           background: var(--bg-tertiary);
           border: 1px solid var(--border-primary);
           border-radius: 6px;
@@ -449,7 +162,7 @@ function Header({
             Oxygen,
             Ubuntu,
             sans-serif;
-          font-size: 0.875rem;
+          font-size: 0.65rem;
           cursor: pointer;
           transition: all 0.2s;
           white-space: nowrap;
@@ -515,7 +228,7 @@ function Header({
 
         .dropdown-option.active {
           background: var(--bg-hover);
-          color: var(--accent-purple);
+          color: #3b82f6;
         }
 
         .status {
@@ -543,23 +256,19 @@ function Header({
         }
 
         .status-text {
-          font-size: 0.875rem;
+          font-size: 0.73rem;
           color: var(--text-secondary);
         }
 
         @media (max-width: 768px) {
           .controls-content {
             padding: 0 1rem;
-            flex-direction: column;
-            align-items: stretch;
             gap: 0.75rem;
-          }
-
-          .search-container {
-            max-width: 100%;
+            flex-direction: column;
           }
 
           .controls-right {
+            width: 100%;
             justify-content: space-between;
           }
         }

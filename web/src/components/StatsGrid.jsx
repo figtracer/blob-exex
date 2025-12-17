@@ -1,11 +1,23 @@
-import { BLOB_TARGET, BLOB_MAX, BLOB_SIZE_BYTES } from "../utils/protocol";
+import {
+  BLOB_TARGET,
+  BLOB_MAX,
+  BLOB_SIZE_BYTES,
+  getUtilizationColor,
+  getSaturationColor,
+  getUtilizationColorName,
+  getSaturationColorName,
+  BASE_BLUE,
+  getPercentageColor,
+} from "../utils/protocol";
+import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from "recharts";
+import { formatBytes, formatGwei } from "../utils/format";
 
-function StatsGrid({ stats }) {
+function StatsGrid({ stats, chainProfiles }) {
   if (!stats) {
     return (
       <div className="stats-grid">
         {[...Array(7)].map((_, i) => (
-          <div key={i} className="stat-card skeleton">
+          <div key={i} className="stat-item skeleton">
             <div className="skeleton-line"></div>
             <div className="skeleton-value"></div>
           </div>
@@ -14,54 +26,110 @@ function StatsGrid({ stats }) {
     );
   }
 
-  const formatNumber = (num) => {
-    if (!num) return "0";
-    return new Intl.NumberFormat("en-US").format(num);
-  };
-
-  const formatBytes = (bytes) => {
-    if (!bytes) return "0 B";
-    const k = 1024;
-    const sizes = ["B", "KB", "MB", "GB", "TB"];
-    const i = Math.floor(Math.log(bytes) / Math.log(k));
-    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + " " + sizes[i];
-  };
-
-  const formatGwei = (wei) => {
-    if (!wei) return "0 Gwei";
-    const gwei = parseFloat(wei) / 1e9;
-    if (gwei < 0.001) return gwei.toFixed(6) + " Gwei";
-    if (gwei < 1) return gwei.toFixed(4) + " Gwei";
-    return gwei.toFixed(2) + " Gwei";
-  };
-
   // Calculate utilization and saturation from avg blobs per block
   const avgBlobs = stats.avg_blobs_per_block ?? 0;
   const targetUtilization = (avgBlobs / BLOB_TARGET) * 100;
   const saturationIndex = (avgBlobs / BLOB_MAX) * 100;
 
+  // Process chain data for pie chart
+  const { chainData, totalBlobs } = (() => {
+    if (!chainProfiles) return { chainData: [], totalBlobs: 0 };
+
+    const allTotal = chainProfiles.reduce(
+      (sum, p) => sum + (p.total_blobs || 0),
+      0,
+    );
+
+    const filtered = chainProfiles
+      .filter((profile) => profile.total_blobs > 0)
+      .sort((a, b) => b.total_blobs - a.total_blobs);
+
+    const data = filtered.map((profile) => {
+      const percentage =
+        allTotal > 0 ? ((profile.total_blobs || 0) / allTotal) * 100 : 0;
+      return {
+        chain: profile.chain || "Unknown",
+        count: profile.total_blobs || 0,
+        color: getPercentageColor(percentage),
+        percentage,
+      };
+    });
+
+    return { chainData: data, totalBlobs: allTotal };
+  })();
+
+  const ChainPieTooltip = ({ active, payload }) => {
+    if (!active || !payload || !payload[0]) return null;
+    const data = payload[0].payload;
+
+    return (
+      <div
+        style={{
+          background: "#0a0a0f",
+          border: "1px solid #252530",
+          borderRadius: "8px",
+          padding: "0.75rem",
+          boxShadow: "0 4px 12px rgba(0, 0, 0, 0.3)",
+        }}
+      >
+        <div
+          style={{
+            fontSize: "0.6875rem",
+            fontWeight: 600,
+            textTransform: "uppercase",
+            letterSpacing: "0.05em",
+            color: "#71717a",
+            marginBottom: "0.375rem",
+            margin: 0,
+          }}
+        >
+          {data.chain}
+        </div>
+        <div
+          style={{
+            fontSize: "0.875rem",
+            fontWeight: 700,
+            margin: 0,
+          }}
+        >
+          {data.count.toLocaleString()} blobs
+        </div>
+        <div
+          style={{
+            fontSize: "0.75rem",
+            color: "#71717a",
+            marginTop: "0.25rem",
+          }}
+        >
+          {data.percentage.toFixed(1)}%
+        </div>
+      </div>
+    );
+  };
+
   const statCards = [
-    {
-      title: "Total Blobs",
-      value: formatNumber(stats.total_blobs),
-      color: "cyan",
-    },
     {
       title: "Total Blob Size",
       value: formatBytes(stats.total_blobs * BLOB_SIZE_BYTES),
+      color: "white",
+    },
+    {
+      title: "Blob Gas Price",
+      value: formatGwei(stats.latest_gas_price),
       color: "blue",
     },
     {
       title: "Avg Blobs/Block",
       value: stats.avg_blobs_per_block?.toFixed(2) || "0",
       subtitle: `Target: ${BLOB_TARGET} | Max: ${BLOB_MAX}`,
-      color: "purple",
+      color: "blue",
     },
     {
       title: "Target Utilization",
       value: `${targetUtilization.toFixed(1)}%`,
       subtitle: `${avgBlobs.toFixed(1)} / ${BLOB_TARGET} blobs`,
       color: getUtilizationColorName(targetUtilization),
+      customColor: getUtilizationColor(targetUtilization),
       hasBar: true,
       barValue: targetUtilization,
       barMax: 150,
@@ -72,22 +140,54 @@ function StatsGrid({ stats }) {
       value: `${saturationIndex.toFixed(1)}%`,
       subtitle: `${avgBlobs.toFixed(1)} / ${BLOB_MAX} blobs`,
       color: getSaturationColorName(saturationIndex),
+      customColor: getSaturationColor(saturationIndex),
       hasBar: true,
       barValue: saturationIndex,
       barMax: 100,
-    },
-    {
-      title: "Blob Gas Price",
-      value: formatGwei(stats.latest_gas_price),
-      color: "yellow",
     },
   ];
 
   return (
     <>
       <div className="stats-grid">
+        {/* Pie Chart - First Item */}
+        <div className="stat-item stat-pie fade-in">
+          <div className="pie-container">
+            <div className="pie-center-text">
+              <div className="pie-total">{totalBlobs.toLocaleString()}</div>
+              <div className="pie-label">Total</div>
+            </div>
+            <div className="pie-chart-wrapper">
+              <ResponsiveContainer width="100%" height={180}>
+                <PieChart>
+                  <Pie
+                    data={chainData}
+                    cx="50%"
+                    cy="50%"
+                    innerRadius={45}
+                    outerRadius={75}
+                    paddingAngle={2}
+                    dataKey="count"
+                    isAnimationActive={false}
+                    stroke="none"
+                  >
+                    {chainData.map((entry) => (
+                      <Cell key={`pie-${entry.chain}`} fill={entry.color} />
+                    ))}
+                  </Pie>
+                  <Tooltip
+                    content={<ChainPieTooltip />}
+                    wrapperStyle={{ zIndex: 1000 }}
+                  />
+                </PieChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
+        </div>
+
+        {/* Other Stats */}
         {statCards.map((card, index) => (
-          <div key={index} className="stat-card fade-in">
+          <div key={index} className="stat-item fade-in">
             <h3 className="stat-title">{card.title}</h3>
             <div
               className={`stat-value ${card.customColor ? "" : `stat-value-${card.color}`}`}
@@ -105,8 +205,7 @@ function StatsGrid({ stats }) {
                     className="stat-bar-fill"
                     style={{
                       width: `${Math.min((card.barValue / card.barMax) * 100, 100)}%`,
-                      backgroundColor:
-                        card.customColor || `var(--accent-${card.color})`,
+                      backgroundColor: card.customColor || BASE_BLUE,
                     }}
                   />
                   {card.barMarker && (
@@ -128,23 +227,69 @@ function StatsGrid({ stats }) {
       <style jsx>{`
         .stats-grid {
           display: grid;
-          grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-          gap: 1rem;
-          margin-bottom: 2rem;
+          grid-template-columns: 200px repeat(5, 1fr);
+          gap: 1.5rem;
+          margin-bottom: 0.5rem;
+          margin-top: -4rem;
+          align-items: start;
         }
 
-        .stat-card {
-          background: var(--bg-card);
-          border: 1px solid var(--border-primary);
-          border-radius: 12px;
-          padding: 1.25rem;
+        .stat-item {
           transition: all 0.2s;
+          display: flex;
+          flex-direction: column;
+          justify-content: flex-start;
+          padding-top: 87px;
+          min-height: auto;
         }
 
-        .stat-card:hover {
-          border-color: var(--border-secondary);
-          transform: translateY(-2px);
-          box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+        .stat-pie {
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          min-height: 220px;
+          padding-top: 20px;
+        }
+
+        .pie-container {
+          position: relative;
+          width: 100%;
+          height: 180px;
+        }
+
+        .pie-center-text {
+          position: absolute;
+          top: 50%;
+          left: 50%;
+          transform: translate(-50%, -50%);
+          text-align: center;
+          pointer-events: none;
+          z-index: 1;
+        }
+
+        .pie-chart-wrapper {
+          position: absolute;
+          top: 0;
+          left: 0;
+          width: 100%;
+          height: 100%;
+          z-index: 2;
+        }
+
+        .pie-total {
+          font-size: 1rem;
+          font-weight: 700;
+          color: var(--text-primary);
+          line-height: 1;
+          margin-bottom: 0.25rem;
+        }
+
+        .pie-label {
+          font-size: 0.56rem;
+          color: var(--text-secondary);
+          text-transform: uppercase;
+          letter-spacing: 0.05em;
+          font-weight: 500;
         }
 
         .stat-title {
@@ -197,36 +342,20 @@ function StatsGrid({ stats }) {
           transform: translateX(-50%);
         }
 
-        .stat-value-cyan {
-          color: var(--accent-cyan);
+        .stat-value-white {
+          color: var(--text-primary);
+        }
+
+        .stat-value-lightBlue {
+          color: #60a5fa;
         }
 
         .stat-value-blue {
-          color: var(--accent-blue);
+          color: #3b82f6;
         }
 
-        .stat-value-purple {
-          color: var(--accent-purple);
-        }
-
-        .stat-value-green {
-          color: var(--accent-green);
-        }
-
-        .stat-value-yellow {
-          color: var(--accent-yellow);
-        }
-
-        .stat-value-amber {
-          color: #f59e0b;
-        }
-
-        .stat-value-orange {
-          color: #f97316;
-        }
-
-        .stat-value-red {
-          color: #ef4444;
+        .stat-value-indigo {
+          color: #4f46e5;
         }
 
         .skeleton {
@@ -248,41 +377,88 @@ function StatsGrid({ stats }) {
           width: 80%;
         }
 
-        @media (max-width: 768px) {
+        @media (max-width: 1400px) {
           .stats-grid {
-            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-            gap: 0.75rem;
+            grid-template-columns: 180px repeat(5, 1fr);
+            gap: 1.25rem;
           }
 
-          .stat-card {
-            padding: 1rem;
+          .stat-item {
+            padding-top: 82px;
+          }
+
+          .stat-pie {
+            padding-top: 15px;
+          }
+        }
+
+        @media (max-width: 1200px) {
+          .stats-grid {
+            grid-template-columns: repeat(3, 1fr);
+            gap: 1rem;
+            align-items: stretch;
+          }
+
+          .stat-item {
+            padding-top: 0;
+          }
+
+          .stat-pie {
+            grid-column: 1 / -1;
+            order: -1 !important;
+            padding-top: 0;
+          }
+
+          .pie-container {
+            height: 200px;
+          }
+
+          .pie-total {
+            font-size: 1.5rem;
+          }
+        }
+
+        @media (max-width: 768px) {
+          .stats-grid {
+            grid-template-columns: repeat(2, 1fr);
+            gap: 1rem;
+          }
+
+          .stat-item {
+            padding-top: 0;
+          }
+
+          .stat-pie {
+            grid-column: 1 / -1;
+            padding-top: 0;
           }
 
           .stat-value {
             font-size: 1.25rem;
           }
+
+          .pie-total {
+            font-size: 1.25rem;
+          }
+
+          .pie-container {
+            height: 180px;
+          }
+        }
+
+        @media (max-width: 480px) {
+          .stats-grid {
+            grid-template-columns: 1fr;
+            gap: 1rem;
+          }
+
+          .stat-pie {
+            grid-column: 1;
+          }
         }
       `}</style>
     </>
   );
-}
-
-// Helper to get color name for utilization
-function getUtilizationColorName(utilization) {
-  if (utilization <= 50) return "green";
-  if (utilization <= 90) return "blue";
-  if (utilization <= 120) return "amber";
-  if (utilization <= 150) return "orange";
-  return "red";
-}
-
-// Helper to get color name for saturation
-function getSaturationColorName(saturation) {
-  if (saturation <= 25) return "green";
-  if (saturation <= 50) return "blue";
-  if (saturation <= 75) return "amber";
-  if (saturation <= 95) return "orange";
-  return "red";
 }
 
 export default StatsGrid;

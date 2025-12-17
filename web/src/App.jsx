@@ -69,34 +69,15 @@ function App() {
     return () => clearInterval(interval);
   }, [fetchData]);
 
-  // Search for a block - memoized
-  const handleBlockSearch = useCallback(async (blockNumber) => {
-    try {
-      const res = await fetch(`/api/block?block_number=${blockNumber}`);
-      if (res.ok) {
-        const block = await res.json();
-        setSelectedBlock(block);
-        return true;
-      } else {
-        return false;
-      }
-    } catch (error) {
-      console.error("Error searching block:", error);
-      throw error;
-    }
-  }, []);
-
   // Memoized close handler
   const handleCloseModal = useCallback(() => setSelectedBlock(null), []);
 
   return (
     <div className="app">
       <Header
-        onSearch={handleBlockSearch}
         selectedBlocks={selectedBlocks}
         onBlocksChange={setSelectedBlocks}
         lastUpdate={lastUpdate}
-        stats={stats}
       />
 
       <main className="main-content">
@@ -107,14 +88,12 @@ function App() {
           </div>
         ) : (
           <>
-            <StatsGrid stats={stats} />
+            <StatsGrid stats={stats} chainProfiles={chainProfilesAllTime} />
 
             <Suspense fallback={<ChartsSkeleton />}>
               <ChartsSection
                 chartData={chartData}
-                chainProfiles={chainProfilesAllTime}
                 onBlockClick={setSelectedBlock}
-                stats={stats}
               />
             </Suspense>
 
@@ -165,7 +144,7 @@ function App() {
           width: 40px;
           height: 40px;
           border: 3px solid var(--border-accent);
-          border-top-color: var(--accent-purple);
+          border-top-color: #3b82f6;
           border-radius: 50%;
           animation: spin 1s linear infinite;
         }

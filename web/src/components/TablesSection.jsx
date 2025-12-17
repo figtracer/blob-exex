@@ -8,7 +8,12 @@ import {
   truncateAddress,
 } from "../utils/format";
 import ChainBadge from "./ChainBadge";
-import { BLOB_TARGET, BLOB_MAX, getUtilizationColor } from "../utils/protocol";
+import {
+  BLOB_TARGET,
+  BLOB_MAX,
+  getUtilizationColor,
+  BASE_BLUE,
+} from "../utils/protocol";
 
 function TablesSection({ blocks, senders, blobTransactions, onBlockClick }) {
   // Memoize sliced data to prevent re-computation
@@ -83,7 +88,7 @@ function TablesSection({ blocks, senders, blobTransactions, onBlockClick }) {
                         </a>
                       </td>
                       <td>
-                        <span className="number">
+                        <span className="number-white">
                           {formatNumber(tx.block_number)}
                         </span>
                       </td>
@@ -91,7 +96,9 @@ function TablesSection({ blocks, senders, blobTransactions, onBlockClick }) {
                         <ChainBadge chainName={tx.chain} size="sm" />
                       </td>
                       <td>
-                        <span className="number">{tx.blob_count || 0}</span>
+                        <span className="number-white">
+                          {tx.blob_count || 0}
+                        </span>
                       </td>
                       <td>
                         <span className="muted">
@@ -99,7 +106,7 @@ function TablesSection({ blocks, senders, blobTransactions, onBlockClick }) {
                         </span>
                       </td>
                       <td>
-                        <span className="number-alt">
+                        <span className="number-white">
                           {formatGwei(tx.gas_price)}
                         </span>
                       </td>
@@ -131,17 +138,17 @@ function TablesSection({ blocks, senders, blobTransactions, onBlockClick }) {
                         <ChainBadge chainName={sender.chain} size="sm" />
                       </td>
                       <td>
-                        <span className="mono highlight">
+                        <span className="number-white">
                           {truncateAddress(sender.address)}
                         </span>
                       </td>
                       <td>
-                        <span className="number">
+                        <span className="number-white">
                           {formatNumber(sender.tx_count)}
                         </span>
                       </td>
                       <td>
-                        <span className="number">
+                        <span className="number-white">
                           {formatNumber(sender.total_blobs)}
                         </span>
                       </td>
@@ -204,10 +211,14 @@ function TablesSection({ blocks, senders, blobTransactions, onBlockClick }) {
                         </span>
                       </td>
                       <td>
-                        <span className="number">{block.tx_count || 0}</span>
+                        <span className="number-white">
+                          {block.tx_count || 0}
+                        </span>
                       </td>
                       <td>
-                        <span className="number">{block.total_blobs || 0}</span>
+                        <span className="number-white">
+                          {block.total_blobs || 0}
+                        </span>
                       </td>
                       <td>
                         <div className="utilization-cell">
@@ -229,7 +240,7 @@ function TablesSection({ blocks, senders, blobTransactions, onBlockClick }) {
                         </div>
                       </td>
                       <td>
-                        <span className="number-alt">
+                        <span className="number-white">
                           {formatGwei(block.gas_price)}
                         </span>
                       </td>
@@ -244,7 +255,7 @@ function TablesSection({ blocks, senders, blobTransactions, onBlockClick }) {
 
       <style jsx>{`
         .tables-section {
-          margin-bottom: 2rem;
+          margin-bottom: 1rem;
         }
 
         .tables-grid {
@@ -333,12 +344,22 @@ function TablesSection({ blocks, senders, blobTransactions, onBlockClick }) {
         }
 
         .number {
-          color: var(--accent-purple);
+          color: #3b82f6;
+          font-variant-numeric: tabular-nums;
+        }
+
+        .number-blue {
+          color: #3b82f6;
+          font-variant-numeric: tabular-nums;
+        }
+
+        .number-white {
+          color: var(--text-primary);
           font-variant-numeric: tabular-nums;
         }
 
         .number-alt {
-          color: var(--accent-yellow);
+          color: #3b82f6;
           font-variant-numeric: tabular-nums;
         }
 
@@ -356,11 +377,11 @@ function TablesSection({ blocks, senders, blobTransactions, onBlockClick }) {
           cursor: pointer;
           transition: all 0.2s;
           border-bottom: 1px solid transparent;
-          color: var(--accent-cyan);
+          color: #3b82f6;
         }
 
         .tx-hash-link:hover {
-          border-bottom-color: var(--accent-cyan);
+          border-bottom-color: #3b82f6;
         }
 
         .block-number-link {
@@ -368,11 +389,11 @@ function TablesSection({ blocks, senders, blobTransactions, onBlockClick }) {
           cursor: pointer;
           transition: all 0.2s;
           border-bottom: 2px solid transparent;
-          color: var(--accent-purple);
+          color: #3b82f6;
         }
 
         .block-number-link:hover {
-          border-bottom-color: var(--accent-purple);
+          border-bottom-color: #3b82f6;
         }
 
         .utilization-cell {

@@ -4,8 +4,6 @@ import {
   Bar,
   LineChart,
   Line,
-  PieChart,
-  Pie,
   XAxis,
   YAxis,
   CartesianGrid,
@@ -14,8 +12,12 @@ import {
   Cell,
   ReferenceLine,
 } from "recharts";
-import { getChainIcon, getChainColor } from "../utils/chains";
-import { BLOB_TARGET, BLOB_MAX } from "../utils/protocol";
+import {
+  BLOB_TARGET,
+  BLOB_MAX,
+  BASE_BLUE,
+  GRADIENT_COLORS,
+} from "../utils/protocol";
 
 const tooltipStyles = {
   container: {
@@ -49,7 +51,7 @@ const CustomTooltip = ({ active, payload, label, valueFormatter }) => {
         {payload.map((entry, index) => (
           <p
             key={index}
-            style={{ ...tooltipStyles.value, color: entry.color || "#a78bfa" }}
+            style={{ ...tooltipStyles.value, color: entry.color || BASE_BLUE }}
           >
             {entry.name}:{" "}
             {valueFormatter ? valueFormatter(entry.value) : entry.value}
@@ -61,44 +63,19 @@ const CustomTooltip = ({ active, payload, label, valueFormatter }) => {
   return null;
 };
 
-const ChainPieTooltip = ({ active, payload }) => {
-  if (active && payload && payload.length) {
-    const data = payload[0].payload;
-    return (
-      <div style={tooltipStyles.container}>
-        <p style={{ ...tooltipStyles.label, color: data.color }}>
-          {data.chain}
-        </p>
-        <p style={{ ...tooltipStyles.value, color: "#e4e4e7" }}>
-          {data.count.toLocaleString()} blobs
-        </p>
-        <p
-          style={{
-            ...tooltipStyles.value,
-            color: "#71717a",
-            fontSize: "0.75rem",
-          }}
-        >
-          {data.percentage.toFixed(1)}%
-        </p>
-      </div>
-    );
-  }
-  return null;
-};
-
-const formatGwei = (value) => value.toFixed(6);
+const formatGweiChart = (value) => value.toFixed(6);
 
 // Get bar color based on blob count relative to target/max
+// Uses blue-to-indigo gradient: light blue (low) -> blue -> indigo (90%+ = max)
 function getBlobBarColor(blobCount) {
-  if (blobCount <= BLOB_TARGET * 0.5) return "#22c55e"; // green - abundant
-  if (blobCount <= BLOB_TARGET * 0.9) return "#3b82f6"; // blue - normal
-  if (blobCount <= BLOB_TARGET * 1.2) return "#f59e0b"; // amber - pressured
-  if (blobCount < BLOB_MAX) return "#f97316"; // orange - congested
-  return "#ef4444"; // red - at max capacity (15 blobs)
+  const saturationPercent = (blobCount / BLOB_MAX) * 100;
+
+  if (saturationPercent < 50) return GRADIENT_COLORS.lightBlue; // 0-7.5 blobs
+  if (saturationPercent < 90) return GRADIENT_COLORS.blue; // 7.5-13.5 blobs
+  return GRADIENT_COLORS.indigo; // 13.5-15 blobs (90%+ = max, always same color)
 }
 
-function ChartsSection({ chartData, chainProfiles, onBlockClick, stats }) {
+function ChartsSection({ chartData, onBlockClick }) {
   // Memoize processed chart data
   const blobsData = useMemo(() => {
     if (!chartData?.labels) return [];
@@ -115,31 +92,6 @@ function ChartsSection({ chartData, chainProfiles, onBlockClick, stats }) {
       price: chartData.gas_prices?.[index] || 0,
     }));
   }, [chartData?.labels, chartData?.gas_prices]);
-
-  const { chainData, totalBlobs } = useMemo(() => {
-    if (!chainProfiles) return { chainData: [], totalBlobs: 0 };
-
-    // Calculate total from ALL chains, not just filtered
-    const allTotal = chainProfiles.reduce(
-      (sum, p) => sum + (p.total_blobs || 0),
-      0,
-    );
-
-    const filtered = chainProfiles
-      .filter((profile) => profile.total_blobs > 0)
-      .sort((a, b) => b.total_blobs - a.total_blobs);
-
-    const data = filtered.map((profile) => ({
-      chain: profile.chain || "Unknown",
-      count: profile.total_blobs || 0,
-      color: getChainColor(profile.chain),
-      percentage:
-        allTotal > 0 ? ((profile.total_blobs || 0) / allTotal) * 100 : 0,
-      icon: getChainIcon(profile.chain),
-    }));
-
-    return { chainData: data, totalBlobs: allTotal };
-  }, [chainProfiles]);
 
   // Memoize click handler
   const handleChartClick = useCallback(
@@ -158,7 +110,7 @@ function ChartsSection({ chartData, chainProfiles, onBlockClick, stats }) {
     [onBlockClick],
   );
 
-  if (!chartData || !chainProfiles) {
+  if (!chartData) {
     return (
       <div className="charts-section">
         <div className="charts-grid">
@@ -215,31 +167,31 @@ function ChartsSection({ chartData, chainProfiles, onBlockClick, stats }) {
                   <Tooltip
                     content={<CustomTooltip />}
                     cursor={{
-                      fill: "rgba(167, 139, 250, 0.1)",
+                      fill: "rgba(59, 130, 246, 0.1)",
                       cursor: "pointer",
                     }}
                   />
                   <ReferenceLine
                     y={BLOB_TARGET}
-                    stroke="#f59e0b"
+                    stroke="#4f46e5"
                     strokeDasharray="4 4"
                     strokeWidth={1.5}
                     fillOpacity={0.3}
                     label={{
                       position: "right",
-                      fill: "#f59e0b",
+                      fill: "#4f46e5",
                       fontSize: 9,
                     }}
                   />
                   <ReferenceLine
                     y={BLOB_MAX}
-                    stroke="#ef4444"
+                    stroke="#4f46e5"
                     strokeDasharray="4 4"
                     strokeWidth={1.5}
                     fillOpacity={0.3}
                     label={{
                       position: "right",
-                      fill: "#ef4444",
+                      fill: "#4f46e5",
                       fontSize: 9,
                     }}
                   />
@@ -290,12 +242,12 @@ function ChartsSection({ chartData, chainProfiles, onBlockClick, stats }) {
                     tickLine={false}
                     tick={{ fill: "#71717a", fontSize: 11 }}
                     width={70}
-                    tickFormatter={formatGwei}
+                    tickFormatter={formatGweiChart}
                   />
                   <Tooltip
-                    content={<CustomTooltip valueFormatter={formatGwei} />}
+                    content={<CustomTooltip valueFormatter={formatGweiChart} />}
                     cursor={{
-                      stroke: "#fbbf24",
+                      stroke: BASE_BLUE,
                       strokeWidth: 1,
                       cursor: "pointer",
                     }}
@@ -303,12 +255,12 @@ function ChartsSection({ chartData, chainProfiles, onBlockClick, stats }) {
                   <Line
                     type="monotone"
                     dataKey="price"
-                    stroke="#fbbf24"
+                    stroke={BASE_BLUE}
                     strokeWidth={2}
                     dot={false}
                     activeDot={{
                       r: 4,
-                      fill: "#fbbf24",
+                      fill: BASE_BLUE,
                       stroke: "#16161f",
                       strokeWidth: 2,
                       cursor: "pointer",
@@ -316,66 +268,6 @@ function ChartsSection({ chartData, chainProfiles, onBlockClick, stats }) {
                   />
                 </LineChart>
               </ResponsiveContainer>
-            </div>
-          </div>
-        </div>
-
-        {/* Chain Stats - Donut Chart */}
-        <div className="chart-card chain-chart-card fade-in">
-          <div className="chart-header">
-            <h2 className="chart-title">Blobs by Chain</h2>
-          </div>
-          <div className="chain-chart-body">
-            <div className="donut-container">
-              <ResponsiveContainer width="100%" height={240}>
-                <PieChart>
-                  <Pie
-                    data={chainData}
-                    cx="50%"
-                    cy="50%"
-                    innerRadius={70}
-                    outerRadius={110}
-                    paddingAngle={2}
-                    dataKey="count"
-                    isAnimationActive={false}
-                    stroke="none"
-                  >
-                    {chainData.map((entry) => (
-                      <Cell key={`pie-${entry.chain}`} fill={entry.color} />
-                    ))}
-                  </Pie>
-                  <Tooltip content={<ChainPieTooltip />} />
-                </PieChart>
-              </ResponsiveContainer>
-              <div className="donut-center-text">
-                <div className="donut-total">{totalBlobs.toLocaleString()}</div>
-                <div className="donut-label">Total Blobs</div>
-              </div>
-            </div>
-            <div className="chain-legend">
-              {chainData.map((entry) => (
-                <div key={entry.chain} className="legend-item">
-                  {entry.icon ? (
-                    <img
-                      src={entry.icon}
-                      alt={entry.chain}
-                      className="chain-icon"
-                    />
-                  ) : (
-                    <div
-                      className="chain-color-dot"
-                      style={{ backgroundColor: entry.color }}
-                    />
-                  )}
-                  <span className="chain-name">{entry.chain}</span>
-                  <span className="chain-count">
-                    {entry.count.toLocaleString()}
-                  </span>
-                  <span className="chain-percentage">
-                    {entry.percentage.toFixed(1)}%
-                  </span>
-                </div>
-              ))}
             </div>
           </div>
         </div>
@@ -399,11 +291,6 @@ function ChartsSection({ chartData, chainProfiles, onBlockClick, stats }) {
           border-radius: 12px;
           overflow: hidden;
           transition: all 0.2s;
-        }
-
-        .chain-chart-card {
-          display: flex;
-          flex-direction: column;
         }
 
         .chart-card:hover {
@@ -438,106 +325,6 @@ function ChartsSection({ chartData, chainProfiles, onBlockClick, stats }) {
           cursor: pointer;
         }
 
-        .chain-chart-body {
-          display: flex;
-          padding: 1.5rem;
-          gap: 2rem;
-          align-items: center;
-          flex: 1;
-        }
-
-        .donut-container {
-          flex: 0 0 280px;
-          min-width: 280px;
-          position: relative;
-        }
-
-        .donut-center-text {
-          position: absolute;
-          top: 50%;
-          left: 50%;
-          transform: translate(-50%, -50%);
-          text-align: center;
-          pointer-events: none;
-        }
-
-        .donut-total {
-          font-size: 1.75rem;
-          font-weight: 700;
-          color: var(--text-primary);
-          line-height: 1;
-          margin-bottom: 0.25rem;
-        }
-
-        .donut-label {
-          font-size: 0.75rem;
-          color: var(--text-secondary);
-          text-transform: uppercase;
-          letter-spacing: 0.05em;
-          font-weight: 500;
-        }
-
-        .chain-legend {
-          flex: 1;
-          display: grid;
-          grid-template-columns: repeat(2, 1fr);
-          gap: 0.5rem 1.5rem;
-        }
-
-        .legend-item {
-          display: flex;
-          align-items: center;
-          gap: 0.5rem;
-          padding: 0.375rem 0.5rem;
-          transition: all 0.15s;
-          border-radius: 6px;
-        }
-
-        .legend-item:hover {
-          background: var(--bg-hover);
-        }
-
-        .chain-icon {
-          width: 16px;
-          height: 16px;
-          border-radius: 50%;
-          flex-shrink: 0;
-        }
-
-        .chain-color-dot {
-          width: 10px;
-          height: 10px;
-          border-radius: 50%;
-          flex-shrink: 0;
-        }
-
-        .chain-name {
-          font-size: 0.75rem;
-          font-weight: 500;
-          color: var(--text-primary);
-          flex: 1;
-          min-width: 0;
-          white-space: nowrap;
-          overflow: hidden;
-          text-overflow: ellipsis;
-        }
-
-        .chain-count {
-          font-size: 0.75rem;
-          font-weight: 600;
-          color: var(--text-primary);
-          font-variant-numeric: tabular-nums;
-          margin-left: auto;
-        }
-
-        .chain-percentage {
-          font-size: 0.6875rem;
-          color: var(--text-secondary);
-          font-variant-numeric: tabular-nums;
-          width: 3rem;
-          text-align: right;
-        }
-
         .skeleton {
           animation: pulse 2s infinite;
         }
@@ -561,50 +348,11 @@ function ChartsSection({ chartData, chainProfiles, onBlockClick, stats }) {
           .charts-grid {
             grid-template-columns: 1fr;
           }
-
-          .chain-chart-body {
-            flex-direction: row;
-          }
-
-          .donut-container {
-            flex: 0 0 220px;
-            min-width: 220px;
-          }
-
-          .donut-total {
-            font-size: 1.5rem;
-          }
-
-          .chain-legend {
-            grid-template-columns: repeat(2, 1fr);
-          }
         }
 
         @media (max-width: 768px) {
           .chart-body {
             padding: 0.75rem;
-          }
-
-          .chain-chart-body {
-            flex-direction: column;
-            padding: 1rem;
-            gap: 1.5rem;
-          }
-
-          .donut-container {
-            flex: none;
-            width: 100%;
-            max-width: 280px;
-            min-width: 200px;
-          }
-
-          .donut-total {
-            font-size: 1.25rem;
-          }
-
-          .chain-legend {
-            grid-template-columns: 1fr;
-            width: 100%;
           }
         }
       `}</style>

@@ -42,7 +42,7 @@ function Footer() {
 
       <style jsx>{`
         .footer {
-          padding: 1.5rem 0;
+          padding: 1rem 0;
           margin-top: auto;
         }
 
@@ -87,7 +87,7 @@ function Footer() {
 
         .author {
           font-weight: 600;
-          color: var(--accent-purple);
+          color: #3b82f6;
         }
 
         .footer-socials {

@@ -167,10 +167,7 @@ function BlockModal({ block, onClose }) {
                   <div
                     className="target-diff"
                     style={{
-                      color:
-                        targetDiff >= 0
-                          ? "var(--accent-green)"
-                          : "var(--accent-red)",
+                      color: targetDiff >= 0 ? "#6366f1" : "#60a5fa",
                     }}
                   >
                     {targetDiffSign}
@@ -411,7 +408,7 @@ function BlockModal({ block, onClose }) {
         }
 
         .detail-value.highlight {
-          color: var(--accent-purple);
+          color: #3b82f6;
           font-weight: 600;
         }
 

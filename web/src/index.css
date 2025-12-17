@@ -23,10 +23,12 @@
     --text-tertiary: #71717a;
     --text-muted: #52525b;
 
-    /* Accent colors */
-    --accent-purple: #a78bfa;
-    --accent-purple-hover: #c4b5fd;
-    --accent-blue: #60a5fa;
+    /* Accent colors - Blue to Purple gradient scheme */
+    --accent-light-blue: #60a5fa;
+    --accent-blue: #3b82f6;
+    --accent-indigo: #4f46e5;
+    --accent-purple: #6366f1;
+    --accent-purple-hover: #8b5cf6;
     --accent-cyan: #22d3ee;
     --accent-green: #34d399;
     --accent-yellow: #fbbf24;
@@ -34,10 +36,10 @@
     --accent-red: #f87171;
     --accent-pink: #f472b6;
 
-    /* Status colors */
-    --success: #10b981;
-    --warning: #f59e0b;
-    --error: #ef4444;
+    /* Status colors - Using blue gradient for consistency */
+    --success: #60a5fa;
+    --warning: #6366f1;
+    --error: #a78bfa;
     --info: #3b82f6;
 
     /* Chart colors */
