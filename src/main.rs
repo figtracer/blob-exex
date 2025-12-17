@@ -199,7 +199,7 @@ fn process_chain(db: &Connection, chain: &Chain) -> eyre::Result<()> {
             block = block_number,
             txs = blob_tx_count,
             blobs = total_blobs,
-            "📦 ExBlob"
+            "ExBlob"
         );
     }
     Ok(())

@@ -13,7 +13,13 @@ function DailyBlobsGraph({ data }) {
   // Process data into a map for quick lookup
   const { dayMap, maxBlobs, totalBlobs, totalSize, weeks } = useMemo(() => {
     if (!data || data.length === 0) {
-      return { dayMap: {}, maxBlobs: 0, totalBlobs: 0, totalSize: 0, weeks: [] };
+      return {
+        dayMap: {},
+        maxBlobs: 0,
+        totalBlobs: 0,
+        totalSize: 0,
+        weeks: [],
+      };
     }
 
     const map = {};
@@ -62,7 +68,13 @@ function DailyBlobsGraph({ data }) {
       weeksData.push(currentWeek);
     }
 
-    return { dayMap: map, maxBlobs: max, totalBlobs: total, totalSize: size, weeks: weeksData };
+    return {
+      dayMap: map,
+      maxBlobs: max,
+      totalBlobs: total,
+      totalSize: size,
+      weeks: weeksData,
+    };
   }, [data]);
 
   // Get color based on blob count intensity
@@ -108,13 +120,15 @@ function DailyBlobsGraph({ data }) {
         </div>
         <style jsx>{`
           .daily-blobs-graph {
-            margin-bottom: 1.5rem;
+            flex: 1;
+            min-width: 0;
           }
           .graph-card {
             background: var(--bg-card);
             border: 1px solid var(--border-primary);
             border-radius: 12px;
             padding: 1.25rem;
+            height: 100%;
           }
           .skeleton {
             animation: pulse 2s infinite;
@@ -126,8 +140,13 @@ function DailyBlobsGraph({ data }) {
             border-radius: 8px;
           }
           @keyframes pulse {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.5; }
+            0%,
+            100% {
+              opacity: 1;
+            }
+            50% {
+              opacity: 0.5;
+            }
           }
         `}</style>
       </div>
@@ -140,11 +159,10 @@ function DailyBlobsGraph({ data }) {
         <div className="graph-card fade-in">
           <div className="graph-header">
             <div className="header-left">
-              <span className="blob-icon">📦</span>
               <h2 className="graph-title">Daily Blobs Graph</h2>
             </div>
             <div className="header-right">
-              <span className="total-stat">📊 {formatBytes(totalSize)}</span>
+              <span className="total-stat">{formatBytes(totalSize)}</span>
             </div>
           </div>
 
@@ -184,7 +202,7 @@ function DailyBlobsGraph({ data }) {
                         }}
                         title={
                           day.data
-                            ? `${day.date}: ${day.data.blob_count.toLocaleString()} blobs, ${day.data.tx_count.toLocaleString()} txs`
+                            ? `${day.date}: ${formatBytes(day.data.total_size_bytes)} (${day.data.blob_count.toLocaleString()} blobs, ${day.data.tx_count.toLocaleString()} txs)`
                             : `${day.date}: No data`
                         }
                       />
@@ -226,7 +244,8 @@ function DailyBlobsGraph({ data }) {
 
       <style jsx>{`
         .daily-blobs-graph {
-          margin-bottom: 1.5rem;
+          flex: 1;
+          min-width: 0;
         }
 
         .graph-card {
@@ -235,6 +254,9 @@ function DailyBlobsGraph({ data }) {
           border-radius: 12px;
           overflow: hidden;
           transition: all 0.2s;
+          height: 100%;
+          display: flex;
+          flex-direction: column;
         }
 
         .graph-card:hover {
@@ -254,10 +276,6 @@ function DailyBlobsGraph({ data }) {
           display: flex;
           align-items: center;
           gap: 0.5rem;
-        }
-
-        .blob-icon {
-          font-size: 1rem;
         }
 
         .graph-title {
@@ -281,16 +299,19 @@ function DailyBlobsGraph({ data }) {
         }
 
         .graph-container {
-          padding: 1rem;
+          padding: 0.75rem;
           overflow-x: auto;
+          flex: 1;
+          display: flex;
+          flex-direction: column;
         }
 
         .month-labels {
           display: grid;
-          grid-template-columns: 30px repeat(53, 11px);
-          gap: 3px;
-          margin-bottom: 4px;
-          font-size: 0.625rem;
+          grid-template-columns: 24px repeat(53, 9px);
+          gap: 2px;
+          margin-bottom: 2px;
+          font-size: 0.5625rem;
           color: var(--text-secondary);
         }
 
@@ -300,41 +321,43 @@ function DailyBlobsGraph({ data }) {
 
         .graph-body {
           display: flex;
-          gap: 4px;
+          gap: 2px;
         }
 
         .day-labels {
           display: flex;
           flex-direction: column;
-          gap: 3px;
-          font-size: 0.5625rem;
+          gap: 2px;
+          font-size: 0.5rem;
           color: var(--text-secondary);
-          padding-right: 4px;
+          padding-right: 2px;
         }
 
         .day-labels span {
-          height: 11px;
+          height: 9px;
           display: flex;
           align-items: center;
         }
 
         .weeks-grid {
           display: flex;
-          gap: 3px;
+          gap: 2px;
         }
 
         .week-column {
           display: flex;
           flex-direction: column;
-          gap: 3px;
+          gap: 2px;
         }
 
         .day-cell {
-          width: 11px;
-          height: 11px;
+          width: 9px;
+          height: 9px;
           border-radius: 2px;
           cursor: pointer;
-          transition: transform 0.1s, box-shadow 0.1s;
+          transition:
+            transform 0.1s,
+            box-shadow 0.1s;
         }
 
         .day-cell:hover {
@@ -348,8 +371,8 @@ function DailyBlobsGraph({ data }) {
           align-items: center;
           justify-content: flex-end;
           gap: 0.5rem;
-          margin-top: 0.75rem;
-          font-size: 0.625rem;
+          margin-top: 0.5rem;
+          font-size: 0.5625rem;
           color: var(--text-secondary);
         }
 
@@ -359,18 +382,18 @@ function DailyBlobsGraph({ data }) {
         }
 
         .legend-cell {
-          width: 11px;
-          height: 11px;
+          width: 9px;
+          height: 9px;
           border-radius: 2px;
         }
 
         .legend-label {
-          font-size: 0.5625rem;
+          font-size: 0.5rem;
         }
 
         @media (max-width: 768px) {
           .graph-container {
-            padding: 0.75rem;
+            padding: 0.5rem;
           }
 
           .graph-header {

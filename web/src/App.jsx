@@ -5,7 +5,6 @@ import TablesSection from "./components/TablesSection";
 import BlockModal from "./components/BlockModal";
 import Footer from "./components/Footer";
 import ChainProfiles from "./components/ChainProfiles";
-import DailyBlobsGraph from "./components/DailyBlobsGraph";
 
 // Lazy load charts to improve initial load time
 const ChartsSection = lazy(() => import("./components/ChartsSection"));
@@ -23,6 +22,7 @@ function App() {
 
   // State for derived metrics
   const [chainProfiles, setChainProfiles] = useState([]);
+  const [chainProfilesAllTime, setChainProfilesAllTime] = useState([]);
   const [dailyBlobs, setDailyBlobs] = useState([]);
 
   // Fetch all data - memoized to prevent recreation
@@ -35,6 +35,7 @@ function App() {
         chartRes,
         txsRes,
         profilesRes,
+        profilesAllTimeRes,
         dailyRes,
       ] = await Promise.all([
         fetch("/api/stats"),
@@ -43,6 +44,7 @@ function App() {
         fetch(`/api/chart?blocks=${selectedBlocks}`),
         fetch("/api/blob-transactions"),
         fetch("/api/chain-profiles"),
+        fetch("/api/chain-profiles?hours=87600"),
         fetch("/api/daily-blobs"),
       ]);
 
@@ -52,6 +54,8 @@ function App() {
       if (chartRes.ok) setChartData(await chartRes.json());
       if (txsRes.ok) setBlobTransactions(await txsRes.json());
       if (profilesRes.ok) setChainProfiles(await profilesRes.json());
+      if (profilesAllTimeRes.ok)
+        setChainProfilesAllTime(await profilesAllTimeRes.json());
       if (dailyRes.ok) setDailyBlobs(await dailyRes.json());
 
       setLastUpdate(new Date());
@@ -109,12 +113,11 @@ function App() {
           <>
             <StatsGrid stats={stats} />
 
-            <DailyBlobsGraph data={dailyBlobs} />
-
             <Suspense fallback={<ChartsSkeleton />}>
               <ChartsSection
                 chartData={chartData}
-                chainProfiles={chainProfiles}
+                chainProfiles={chainProfilesAllTime}
+                dailyBlobs={dailyBlobs}
                 onBlockClick={setSelectedBlock}
               />
             </Suspense>
