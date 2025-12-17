@@ -71,19 +71,6 @@ struct ChartData {
     gas_prices: Vec<f64>,
 }
 
-#[derive(Serialize)]
-struct DailyBlobData {
-    date: String, // YYYY-MM-DD format
-    blob_count: u64,
-    tx_count: u64,
-    total_size_bytes: u64,
-}
-
-#[derive(Deserialize)]
-struct DailyBlobsQuery {
-    days: Option<u64>, // Number of days to fetch (default 365)
-}
-
 #[derive(Deserialize)]
 struct ChartQuery {
     blocks: Option<u64>,
@@ -245,7 +232,7 @@ async fn get_stats(State(db_path): State<DbPath>) -> Json<Stats> {
 
     let total_blobs: u64 = conn
         .query_row(
-            "SELECT COALESCE(SUM(total_blobs), 0) FROM blocks",
+            "SELECT COALESCE(SUM(blob_count), 0) FROM blob_transactions",
             [],
             |row| row.get(0),
         )
@@ -617,53 +604,6 @@ async fn get_block(
     }
 }
 
-// Chain behavior profiles (replaces chain-stats - superset of that data)
-async fn get_daily_blobs(
-    State(db_path): State<DbPath>,
-    Query(params): Query<DailyBlobsQuery>,
-) -> Json<Vec<DailyBlobData>> {
-    let conn = open_db(&db_path).expect("Failed to open database");
-
-    let days = params.days.unwrap_or(365);
-    let now = std::time::SystemTime::now()
-        .duration_since(std::time::UNIX_EPOCH)
-        .unwrap()
-        .as_secs() as i64;
-    let time_limit = now - (days as i64 * 86400);
-
-    // Group blobs by day using block_timestamp
-    let mut stmt = conn
-        .prepare(
-            "SELECT
-                date(block_timestamp, 'unixepoch') as day,
-                SUM(total_blobs) as blob_count,
-                SUM(tx_count) as tx_count
-             FROM blocks
-             WHERE block_timestamp >= ?
-             GROUP BY day
-             ORDER BY day ASC",
-        )
-        .unwrap();
-
-    let rows: Vec<DailyBlobData> = stmt
-        .query_map([time_limit], |row| {
-            let date: String = row.get(0)?;
-            let blob_count: u64 = row.get(1)?;
-            let tx_count: u64 = row.get(2)?;
-            Ok(DailyBlobData {
-                date,
-                blob_count,
-                tx_count,
-                total_size_bytes: blob_count * BLOB_SIZE_BYTES,
-            })
-        })
-        .unwrap()
-        .filter_map(|r| r.ok())
-        .collect();
-
-    Json(rows)
-}
-
 async fn get_chain_profiles(
     State(db_path): State<DbPath>,
     Query(params): Query<TimeRangeQuery>,
@@ -795,7 +735,6 @@ async fn main() -> eyre::Result<()> {
         .route("/api/chart", get(get_chart_data))
         .route("/api/blob-transactions", get(get_blob_transactions))
         .route("/api/chain-profiles", get(get_chain_profiles))
-        .route("/api/daily-blobs", get(get_daily_blobs))
         .nest_service("/assets", ServeDir::new(format!("{}/assets", static_dir)))
         .nest_service("/icons", ServeDir::new(format!("{}/icons", static_dir)))
         .layer(CorsLayer::permissive())

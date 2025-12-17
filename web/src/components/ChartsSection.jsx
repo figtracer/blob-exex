@@ -16,7 +16,6 @@ import {
 } from "recharts";
 import { getChainIcon, getChainColor } from "../utils/chains";
 import { BLOB_TARGET, BLOB_MAX } from "../utils/protocol";
-import DailyBlobsGraph from "./DailyBlobsGraph";
 
 const tooltipStyles = {
   container: {
@@ -99,7 +98,7 @@ function getBlobBarColor(blobCount) {
   return "#ef4444"; // red - at max capacity (15 blobs)
 }
 
-function ChartsSection({ chartData, chainProfiles, dailyBlobs, onBlockClick }) {
+function ChartsSection({ chartData, chainProfiles, onBlockClick, stats }) {
   // Memoize processed chart data
   const blobsData = useMemo(() => {
     if (!chartData?.labels) return [];
@@ -120,22 +119,27 @@ function ChartsSection({ chartData, chainProfiles, dailyBlobs, onBlockClick }) {
   const { chainData, totalBlobs } = useMemo(() => {
     if (!chainProfiles) return { chainData: [], totalBlobs: 0 };
 
+    // Calculate total from ALL chains, not just filtered
+    const allTotal = chainProfiles.reduce(
+      (sum, p) => sum + (p.total_blobs || 0),
+      0,
+    );
+
     const filtered = chainProfiles
       .filter((profile) => profile.total_blobs > 0)
       .sort((a, b) => b.total_blobs - a.total_blobs)
       .slice(0, 10);
 
-    const total = filtered.reduce((sum, p) => sum + (p.total_blobs || 0), 0);
-
     const data = filtered.map((profile) => ({
       chain: profile.chain || "Unknown",
       count: profile.total_blobs || 0,
       color: getChainColor(profile.chain),
-      percentage: total > 0 ? ((profile.total_blobs || 0) / total) * 100 : 0,
+      percentage:
+        allTotal > 0 ? ((profile.total_blobs || 0) / allTotal) * 100 : 0,
       icon: getChainIcon(profile.chain),
     }));
 
-    return { chainData: data, totalBlobs: total };
+    return { chainData: data, totalBlobs: allTotal };
   }, [chainProfiles]);
 
   // Memoize click handler
@@ -317,70 +321,61 @@ function ChartsSection({ chartData, chainProfiles, dailyBlobs, onBlockClick }) {
           </div>
         </div>
 
-        {/* Daily Blobs Graph and Chain Stats side by side */}
-        <div className="daily-chain-row">
-          {/* Daily Blobs Graph */}
-          <DailyBlobsGraph data={dailyBlobs} />
-
-          {/* Chain Stats - Donut Chart with Legend */}
-          <div className="chart-card chain-chart-card fade-in">
-            <div className="chart-header">
-              <h2 className="chart-title">Blobs by Chain (All Time)</h2>
-              <span className="chart-subtitle">
-                {totalBlobs.toLocaleString()} total blobs
-              </span>
+        {/* Chain Stats - Donut Chart */}
+        <div className="chart-card chain-chart-card fade-in">
+          <div className="chart-header">
+            <h2 className="chart-title">Blobs by Chain</h2>
+            <span className="chart-subtitle">
+              {totalBlobs.toLocaleString()} total blobs
+            </span>
+          </div>
+          <div className="chain-chart-body">
+            <div className="donut-container">
+              <ResponsiveContainer width="100%" height={140}>
+                <PieChart>
+                  <Pie
+                    data={chainData}
+                    cx="50%"
+                    cy="50%"
+                    innerRadius={35}
+                    outerRadius={55}
+                    paddingAngle={1}
+                    dataKey="count"
+                    isAnimationActive={false}
+                    stroke="none"
+                  >
+                    {chainData.map((entry) => (
+                      <Cell key={`pie-${entry.chain}`} fill={entry.color} />
+                    ))}
+                  </Pie>
+                  <Tooltip content={<ChainPieTooltip />} />
+                </PieChart>
+              </ResponsiveContainer>
             </div>
-            <div className="chain-chart-body">
-              <div className="donut-container">
-                <ResponsiveContainer width="100%" height={180}>
-                  <PieChart>
-                    <Pie
-                      data={chainData}
-                      cx="50%"
-                      cy="50%"
-                      innerRadius={45}
-                      outerRadius={70}
-                      paddingAngle={2}
-                      dataKey="count"
-                      isAnimationActive={false}
-                    >
-                      {chainData.map((entry) => (
-                        <Cell key={`pie-${entry.chain}`} fill={entry.color} />
-                      ))}
-                    </Pie>
-                    <Tooltip content={<ChainPieTooltip />} />
-                  </PieChart>
-                </ResponsiveContainer>
-              </div>
-              <div className="chain-legend">
-                {chainData.map((entry) => (
-                  <div key={entry.chain} className="legend-item">
-                    <div className="legend-left">
-                      {entry.icon ? (
-                        <img
-                          src={entry.icon}
-                          alt={entry.chain}
-                          className="chain-icon"
-                        />
-                      ) : (
-                        <div
-                          className="chain-color-dot"
-                          style={{ backgroundColor: entry.color }}
-                        />
-                      )}
-                      <span className="chain-name">{entry.chain}</span>
-                    </div>
-                    <div className="legend-right">
-                      <span className="chain-count">
-                        {entry.count.toLocaleString()}
-                      </span>
-                      <span className="chain-percentage">
-                        {entry.percentage.toFixed(1)}%
-                      </span>
-                    </div>
-                  </div>
-                ))}
-              </div>
+            <div className="chain-legend">
+              {chainData.map((entry) => (
+                <div key={entry.chain} className="legend-item">
+                  {entry.icon ? (
+                    <img
+                      src={entry.icon}
+                      alt={entry.chain}
+                      className="chain-icon"
+                    />
+                  ) : (
+                    <div
+                      className="chain-color-dot"
+                      style={{ backgroundColor: entry.color }}
+                    />
+                  )}
+                  <span className="chain-name">{entry.chain}</span>
+                  <span className="chain-count">
+                    {entry.count.toLocaleString()}
+                  </span>
+                  <span className="chain-percentage">
+                    {entry.percentage.toFixed(1)}%
+                  </span>
+                </div>
+              ))}
             </div>
           </div>
         </div>
@@ -398,12 +393,6 @@ function ChartsSection({ chartData, chainProfiles, dailyBlobs, onBlockClick }) {
           margin-bottom: 1rem;
         }
 
-        .daily-chain-row {
-          display: flex;
-          gap: 1rem;
-          margin-bottom: 1rem;
-        }
-
         .chart-card {
           background: var(--bg-card);
           border: 1px solid var(--border-primary);
@@ -413,8 +402,6 @@ function ChartsSection({ chartData, chainProfiles, dailyBlobs, onBlockClick }) {
         }
 
         .chain-chart-card {
-          flex: 1;
-          min-width: 0;
           display: flex;
           flex-direction: column;
         }
@@ -453,80 +440,75 @@ function ChartsSection({ chartData, chainProfiles, dailyBlobs, onBlockClick }) {
 
         .chain-chart-body {
           display: flex;
-          padding: 0.75rem;
-          gap: 0.75rem;
+          padding: 0.75rem 1rem;
+          gap: 1rem;
           align-items: center;
           flex: 1;
         }
 
         .donut-container {
-          flex: 0 0 160px;
-          min-width: 160px;
+          flex: 0 0 120px;
+          min-width: 120px;
         }
 
         .chain-legend {
           flex: 1;
           display: grid;
           grid-template-columns: repeat(2, 1fr);
-          gap: 0.375rem;
+          gap: 0.25rem 0.75rem;
         }
 
         .legend-item {
           display: flex;
-          justify-content: space-between;
           align-items: center;
-          padding: 0.375rem 0.5rem;
-          background: var(--bg-secondary);
-          border-radius: 6px;
+          gap: 0.375rem;
+          padding: 0.25rem 0;
           transition: all 0.15s;
         }
 
         .legend-item:hover {
-          background: var(--border-primary);
-        }
-
-        .legend-left {
-          display: flex;
-          align-items: center;
-          gap: 0.375rem;
+          opacity: 0.8;
         }
 
         .chain-icon {
-          width: 14px;
-          height: 14px;
+          width: 12px;
+          height: 12px;
           border-radius: 50%;
+          flex-shrink: 0;
         }
 
         .chain-color-dot {
-          width: 10px;
-          height: 10px;
+          width: 8px;
+          height: 8px;
           border-radius: 50%;
+          flex-shrink: 0;
         }
 
         .chain-name {
-          font-size: 0.6875rem;
+          font-size: 0.625rem;
           font-weight: 500;
           color: var(--text-primary);
-        }
-
-        .legend-right {
-          display: flex;
-          flex-direction: column;
-          align-items: flex-end;
-          gap: 0.0625rem;
+          flex: 1;
+          min-width: 0;
+          white-space: nowrap;
+          overflow: hidden;
+          text-overflow: ellipsis;
         }
 
         .chain-count {
-          font-size: 0.6875rem;
+          font-size: 0.625rem;
           font-weight: 600;
           color: var(--text-primary);
           font-variant-numeric: tabular-nums;
+          margin-left: auto;
         }
 
         .chain-percentage {
           font-size: 0.5625rem;
           color: var(--text-secondary);
           font-variant-numeric: tabular-nums;
+          width: 2.5rem;
+          text-align: right;
         }
 
         .skeleton {
@@ -553,8 +535,22 @@ function ChartsSection({ chartData, chainProfiles, dailyBlobs, onBlockClick }) {
             grid-template-columns: 1fr;
           }
 
-          .daily-chain-row {
-            flex-direction: column;
+          .chain-chart-body {
+            flex-direction: row;
+          }
+
+          .donut-container {
+            flex: 0 0 120px;
+          }
+
+          .chain-legend {
+            grid-template-columns: repeat(2, 1fr);
+          }
+        }
+
+        @media (max-width: 768px) {
+          .chart-body {
+            padding: 0.75rem;
           }
 
           .chain-chart-body {
@@ -567,18 +563,8 @@ function ChartsSection({ chartData, chainProfiles, dailyBlobs, onBlockClick }) {
           }
 
           .chain-legend {
-            grid-template-columns: repeat(2, 1fr);
-            width: 100%;
-          }
-        }
-
-        @media (max-width: 768px) {
-          .chart-body {
-            padding: 0.75rem;
-          }
-
-          .chain-legend {
             grid-template-columns: 1fr;
+            width: 100%;
           }
         }
       `}</style>

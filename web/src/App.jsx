@@ -23,7 +23,6 @@ function App() {
   // State for derived metrics
   const [chainProfiles, setChainProfiles] = useState([]);
   const [chainProfilesAllTime, setChainProfilesAllTime] = useState([]);
-  const [dailyBlobs, setDailyBlobs] = useState([]);
 
   // Fetch all data - memoized to prevent recreation
   const fetchData = useCallback(async () => {
@@ -36,7 +35,6 @@ function App() {
         txsRes,
         profilesRes,
         profilesAllTimeRes,
-        dailyRes,
       ] = await Promise.all([
         fetch("/api/stats"),
         fetch("/api/blocks"),
@@ -45,7 +43,6 @@ function App() {
         fetch("/api/blob-transactions"),
         fetch("/api/chain-profiles"),
         fetch("/api/chain-profiles?hours=87600"),
-        fetch("/api/daily-blobs"),
       ]);
 
       if (statsRes.ok) setStats(await statsRes.json());
@@ -56,7 +53,6 @@ function App() {
       if (profilesRes.ok) setChainProfiles(await profilesRes.json());
       if (profilesAllTimeRes.ok)
         setChainProfilesAllTime(await profilesAllTimeRes.json());
-      if (dailyRes.ok) setDailyBlobs(await dailyRes.json());
 
       setLastUpdate(new Date());
       setIsLoading(false);
@@ -117,8 +113,8 @@ function App() {
               <ChartsSection
                 chartData={chartData}
                 chainProfiles={chainProfilesAllTime}
-                dailyBlobs={dailyBlobs}
                 onBlockClick={setSelectedBlock}
+                stats={stats}
               />
             </Suspense>
 
