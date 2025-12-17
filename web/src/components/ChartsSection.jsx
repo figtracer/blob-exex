@@ -239,8 +239,8 @@ function ChartsSection({ chartData, chainProfiles, onBlockClick }) {
                     stroke="#f59e0b"
                     strokeDasharray="4 4"
                     strokeWidth={1.5}
+                    fillOpacity={0.3}
                     label={{
-                      opacity: 0.4,
                       position: "right",
                       fill: "#f59e0b",
                       fontSize: 9,
@@ -251,8 +251,8 @@ function ChartsSection({ chartData, chainProfiles, onBlockClick }) {
                     stroke="#ef4444"
                     strokeDasharray="4 4"
                     strokeWidth={1.5}
+                    fillOpacity={0.3}
                     label={{
-                      opacity: 0.4,
                       position: "right",
                       fill: "#ef4444",
                       fontSize: 9,

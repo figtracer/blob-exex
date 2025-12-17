@@ -170,7 +170,7 @@ function ChainProfileCard({ profile }) {
 
       <div className="metrics-row">
         <div className="metric">
-          <span className="metric-label">Batch Size</span>
+          <span className="metric-label">Avg blobs/tx</span>
           <span className="metric-value">
             {avg_blobs_per_tx.toFixed(2)} blobs/tx
           </span>

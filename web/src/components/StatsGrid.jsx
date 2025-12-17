@@ -278,9 +278,10 @@ function getUtilizationColorName(utilization) {
 
 // Helper to get color name for saturation
 function getSaturationColorName(saturation) {
-  if (saturation <= 33) return "green";
-  if (saturation <= 66) return "amber";
-  if (saturation <= 90) return "orange";
+  if (saturation <= 25) return "green";
+  if (saturation <= 50) return "blue";
+  if (saturation <= 75) return "amber";
+  if (saturation <= 95) return "orange";
   return "red";
 }
 
