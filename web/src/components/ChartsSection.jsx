@@ -127,8 +127,7 @@ function ChartsSection({ chartData, chainProfiles, onBlockClick, stats }) {
 
     const filtered = chainProfiles
       .filter((profile) => profile.total_blobs > 0)
-      .sort((a, b) => b.total_blobs - a.total_blobs)
-      .slice(0, 10);
+      .sort((a, b) => b.total_blobs - a.total_blobs);
 
     const data = filtered.map((profile) => ({
       chain: profile.chain || "Unknown",
@@ -325,21 +324,18 @@ function ChartsSection({ chartData, chainProfiles, onBlockClick, stats }) {
         <div className="chart-card chain-chart-card fade-in">
           <div className="chart-header">
             <h2 className="chart-title">Blobs by Chain</h2>
-            <span className="chart-subtitle">
-              {totalBlobs.toLocaleString()} total blobs
-            </span>
           </div>
           <div className="chain-chart-body">
             <div className="donut-container">
-              <ResponsiveContainer width="100%" height={140}>
+              <ResponsiveContainer width="100%" height={240}>
                 <PieChart>
                   <Pie
                     data={chainData}
                     cx="50%"
                     cy="50%"
-                    innerRadius={35}
-                    outerRadius={55}
-                    paddingAngle={1}
+                    innerRadius={70}
+                    outerRadius={110}
+                    paddingAngle={2}
                     dataKey="count"
                     isAnimationActive={false}
                     stroke="none"
@@ -351,6 +347,10 @@ function ChartsSection({ chartData, chainProfiles, onBlockClick, stats }) {
                   <Tooltip content={<ChainPieTooltip />} />
                 </PieChart>
               </ResponsiveContainer>
+              <div className="donut-center-text">
+                <div className="donut-total">{totalBlobs.toLocaleString()}</div>
+                <div className="donut-label">Total Blobs</div>
+              </div>
             </div>
             <div className="chain-legend">
               {chainData.map((entry) => (
@@ -440,52 +440,79 @@ function ChartsSection({ chartData, chainProfiles, onBlockClick, stats }) {
 
         .chain-chart-body {
           display: flex;
-          padding: 0.75rem 1rem;
-          gap: 1rem;
+          padding: 1.5rem;
+          gap: 2rem;
           align-items: center;
           flex: 1;
         }
 
         .donut-container {
-          flex: 0 0 120px;
-          min-width: 120px;
+          flex: 0 0 280px;
+          min-width: 280px;
+          position: relative;
+        }
+
+        .donut-center-text {
+          position: absolute;
+          top: 50%;
+          left: 50%;
+          transform: translate(-50%, -50%);
+          text-align: center;
+          pointer-events: none;
+        }
+
+        .donut-total {
+          font-size: 1.75rem;
+          font-weight: 700;
+          color: var(--text-primary);
+          line-height: 1;
+          margin-bottom: 0.25rem;
+        }
+
+        .donut-label {
+          font-size: 0.75rem;
+          color: var(--text-secondary);
+          text-transform: uppercase;
+          letter-spacing: 0.05em;
+          font-weight: 500;
         }
 
         .chain-legend {
           flex: 1;
           display: grid;
           grid-template-columns: repeat(2, 1fr);
-          gap: 0.25rem 0.75rem;
+          gap: 0.5rem 1.5rem;
         }
 
         .legend-item {
           display: flex;
           align-items: center;
-          gap: 0.375rem;
-          padding: 0.25rem 0;
+          gap: 0.5rem;
+          padding: 0.375rem 0.5rem;
           transition: all 0.15s;
+          border-radius: 6px;
         }
 
         .legend-item:hover {
-          opacity: 0.8;
+          background: var(--bg-hover);
         }
 
         .chain-icon {
-          width: 12px;
-          height: 12px;
+          width: 16px;
+          height: 16px;
           border-radius: 50%;
           flex-shrink: 0;
         }
 
         .chain-color-dot {
-          width: 8px;
-          height: 8px;
+          width: 10px;
+          height: 10px;
           border-radius: 50%;
           flex-shrink: 0;
         }
 
         .chain-name {
-          font-size: 0.625rem;
+          font-size: 0.75rem;
           font-weight: 500;
           color: var(--text-primary);
           flex: 1;
@@ -496,7 +523,7 @@ function ChartsSection({ chartData, chainProfiles, onBlockClick, stats }) {
         }
 
         .chain-count {
-          font-size: 0.625rem;
+          font-size: 0.75rem;
           font-weight: 600;
           color: var(--text-primary);
           font-variant-numeric: tabular-nums;
@@ -504,10 +531,10 @@ function ChartsSection({ chartData, chainProfiles, onBlockClick, stats }) {
         }
 
         .chain-percentage {
-          font-size: 0.5625rem;
+          font-size: 0.6875rem;
           color: var(--text-secondary);
           font-variant-numeric: tabular-nums;
-          width: 2.5rem;
+          width: 3rem;
           text-align: right;
         }
 
@@ -540,7 +567,12 @@ function ChartsSection({ chartData, chainProfiles, onBlockClick, stats }) {
           }
 
           .donut-container {
-            flex: 0 0 120px;
+            flex: 0 0 220px;
+            min-width: 220px;
+          }
+
+          .donut-total {
+            font-size: 1.5rem;
           }
 
           .chain-legend {
@@ -555,11 +587,19 @@ function ChartsSection({ chartData, chainProfiles, onBlockClick, stats }) {
 
           .chain-chart-body {
             flex-direction: column;
+            padding: 1rem;
+            gap: 1.5rem;
           }
 
           .donut-container {
             flex: none;
             width: 100%;
+            max-width: 280px;
+            min-width: 200px;
+          }
+
+          .donut-total {
+            font-size: 1.25rem;
           }
 
           .chain-legend {
