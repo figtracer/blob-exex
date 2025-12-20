@@ -1,7 +1,24 @@
 import { useMemo } from "react";
+
 import { getChainIcon, getChainColor } from "../utils/chains";
 
 function ChainProfiles({ data }) {
+  const topChains = useMemo(() => {
+    return data
+      .filter(
+        (chain) =>
+          chain.total_transactions > 0 && chain.chain.toLowerCase() !== "other",
+      )
+      .sort((a, b) => {
+        // Sort by posting interval ascending (lower interval = more frequent = first)
+        // Chains with 0 interval (only 1 tx) go to the end
+        const aInterval = a.avg_posting_interval_secs || Infinity;
+        const bInterval = b.avg_posting_interval_secs || Infinity;
+        return aInterval - bInterval;
+      })
+      .slice(0, 12);
+  }, [data]);
+
   if (!data || data.length === 0) {
     return (
       <div className="chain-profiles">
@@ -52,24 +69,6 @@ function ChainProfiles({ data }) {
       </div>
     );
   }
-
-  // Filter to top chains with meaningful data, excluding "Other"
-  // Sort by post frequency (ascending - most frequent posters first)
-  const topChains = useMemo(() => {
-    return data
-      .filter(
-        (chain) =>
-          chain.total_transactions > 0 && chain.chain.toLowerCase() !== "other",
-      )
-      .sort((a, b) => {
-        // Sort by posting interval ascending (lower interval = more frequent = first)
-        // Chains with 0 interval (only 1 tx) go to the end
-        const aInterval = a.avg_posting_interval_secs || Infinity;
-        const bInterval = b.avg_posting_interval_secs || Infinity;
-        return aInterval - bInterval;
-      })
-      .slice(0, 12);
-  }, [data]);
 
   return (
     <>

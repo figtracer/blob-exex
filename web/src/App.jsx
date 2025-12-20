@@ -1,10 +1,11 @@
 import { useState, useEffect, useCallback, lazy, Suspense } from "react";
+
+import BlockModal from "./components/BlockModal";
+import ChainProfiles from "./components/ChainProfiles";
+import Footer from "./components/Footer";
 import Header from "./components/Header";
 import StatsGrid from "./components/StatsGrid";
 import TablesSection from "./components/TablesSection";
-import BlockModal from "./components/BlockModal";
-import Footer from "./components/Footer";
-import ChainProfiles from "./components/ChainProfiles";
 
 // Lazy load charts to improve initial load time
 const ChartsSection = lazy(() => import("./components/ChartsSection"));

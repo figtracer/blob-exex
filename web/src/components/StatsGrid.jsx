@@ -1,3 +1,6 @@
+import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from "recharts";
+
+import { formatBytes, formatGwei } from "../utils/format";
 import {
   BLOB_TARGET,
   BLOB_MAX,
@@ -7,10 +10,7 @@ import {
   getUtilizationColorName,
   getSaturationColorName,
   BASE_BLUE,
-  getPercentageColor,
 } from "../utils/protocol";
-import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from "recharts";
-import { formatBytes, formatGwei } from "../utils/format";
 
 function StatsGrid({ stats, chainProfiles }) {
   if (!stats) {

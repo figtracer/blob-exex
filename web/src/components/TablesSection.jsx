@@ -1,4 +1,5 @@
 import { useMemo, useCallback } from "react";
+
 import {
   formatNumber,
   formatBytes,
@@ -7,13 +8,13 @@ import {
   truncateHash,
   truncateAddress,
 } from "../utils/format";
-import ChainBadge from "./ChainBadge";
 import {
   BLOB_TARGET,
   BLOB_MAX,
   getUtilizationColor,
-  BASE_BLUE,
 } from "../utils/protocol";
+
+import ChainBadge from "./ChainBadge";
 
 function TablesSection({ blocks, senders, blobTransactions, onBlockClick }) {
   // Memoize sliced data to prevent re-computation

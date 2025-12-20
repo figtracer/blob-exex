@@ -1,4 +1,5 @@
 import { X } from "lucide-react";
+
 import {
   formatNumber,
   formatBytes,
@@ -6,7 +7,6 @@ import {
   formatTimestamp,
   truncateHash,
 } from "../utils/format";
-import ChainBadge from "./ChainBadge";
 import {
   BLOB_TARGET,
   BLOB_MAX,
@@ -14,6 +14,8 @@ import {
   getUtilizationColor,
   getSaturationColor,
 } from "../utils/protocol";
+
+import ChainBadge from "./ChainBadge";
 
 function BlockModal({ block, onClose }) {
   if (!block) return null;

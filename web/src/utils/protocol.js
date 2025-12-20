@@ -22,15 +22,6 @@ const COLOR_GRADIENT = {
 // Base blue color for non-percentage values
 export const BASE_BLUE = "#3b82f6";
 
-// Get color based on percentage (0-100+)
-// Returns a color from the blue-to-indigo gradient
-// 100% and above ALWAYS get indigo (the max color)
-export function getPercentageColor(percentage) {
-  if (percentage < 50) return COLOR_GRADIENT.lightBlue;
-  if (percentage < 90) return COLOR_GRADIENT.blue;
-  return COLOR_GRADIENT.indigo; // 90-100% and 100%+ all get indigo
-}
-
 // Get utilization color based on percentage (target-based, can exceed 100%)
 // Uses blue-to-indigo gradient where indigo indicates at or exceeding target
 export function getUtilizationColor(utilization) {
@@ -45,13 +36,6 @@ export function getSaturationColor(saturation) {
   if (saturation < 50) return COLOR_GRADIENT.lightBlue;
   if (saturation < 90) return COLOR_GRADIENT.blue;
   return COLOR_GRADIENT.indigo; // 90-100% all get indigo
-}
-
-// Get color name for CSS class usage (returns color name string)
-export function getPercentageColorName(percentage) {
-  if (percentage < 50) return "lightBlue";
-  if (percentage < 90) return "blue";
-  return "indigo";
 }
 
 // Get utilization color name for CSS class usage
