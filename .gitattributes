@@ -1,0 +1,4 @@
+*.js -linguist-detectable
+*.jsx -linguist-detectable
+*.css -linguist-detectable
+*.html -linguist-detectable
