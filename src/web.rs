@@ -498,7 +498,7 @@ async fn main() -> eyre::Result<()> {
         .layer(CorsLayer::permissive())
         .with_state(db);
 
-    let addr = std::env::var("BLOB_WEB_ADDR").unwrap_or_else(|_| "0.0.0.0:3000".to_string());
+    let addr = std::env::var("BLOB_WEB_ADDR").unwrap_or_else(|_| "0.0.0.0:3500".to_string());
     let listener = tokio::net::TcpListener::bind(&addr).await?;
 
     println!("ExBlob running at http://{}", addr);
