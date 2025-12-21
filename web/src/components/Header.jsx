@@ -47,6 +47,7 @@ function Header({ selectedBlocks, onBlocksChange, lastUpdate }) {
               alt="EXBLOB"
               className="header-favicon"
             />
+            <span className="controls-left">TEMPORARILY DOWN</span>
           </div>
 
           <div className="controls-right">
