@@ -8,7 +8,70 @@ use axum::{
 use blob_exex::Database;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
+use std::sync::Arc;
+use std::time::{Duration, Instant};
+use tokio::sync::RwLock;
 use tower_http::{cors::CorsLayer, services::ServeDir};
+
+// Cache entry with data and timestamp
+struct CacheEntry<T> {
+    data: T,
+    cached_at: Instant,
+}
+
+impl<T: Clone> CacheEntry<T> {
+    fn new(data: T) -> Self {
+        Self {
+            data,
+            cached_at: Instant::now(),
+        }
+    }
+
+    fn is_valid(&self, ttl: Duration) -> bool {
+        self.cached_at.elapsed() < ttl
+    }
+}
+
+// Application cache for expensive queries
+struct AppCache {
+    stats: RwLock<Option<CacheEntry<Stats>>>,
+    blocks: RwLock<Option<CacheEntry<Vec<Block>>>>,
+    senders: RwLock<Option<CacheEntry<Vec<Sender>>>>,
+    blob_transactions: RwLock<Option<CacheEntry<Vec<BlobTransaction>>>>,
+    all_time_chart: RwLock<Option<CacheEntry<AllTimeChartData>>>,
+    chain_profiles: RwLock<Option<CacheEntry<Vec<ChainProfile>>>>,
+    chain_profiles_all_time: RwLock<Option<CacheEntry<Vec<ChainProfile>>>>,
+}
+
+impl AppCache {
+    fn new() -> Self {
+        Self {
+            stats: RwLock::new(None),
+            blocks: RwLock::new(None),
+            senders: RwLock::new(None),
+            blob_transactions: RwLock::new(None),
+            all_time_chart: RwLock::new(None),
+            chain_profiles: RwLock::new(None),
+            chain_profiles_all_time: RwLock::new(None),
+        }
+    }
+}
+
+// Cache TTLs
+const STATS_TTL: Duration = Duration::from_secs(30);
+const BLOCKS_TTL: Duration = Duration::from_secs(30);
+const SENDERS_TTL: Duration = Duration::from_secs(60);
+const BLOB_TXS_TTL: Duration = Duration::from_secs(30);
+const ALL_TIME_CHART_TTL: Duration = Duration::from_secs(300); // 5 minutes
+const CHAIN_PROFILES_TTL: Duration = Duration::from_secs(60);
+const CHAIN_PROFILES_ALL_TIME_TTL: Duration = Duration::from_secs(300); // 5 minutes
+
+// Application state containing both database and cache
+#[derive(Clone)]
+struct AppState {
+    db: Database,
+    cache: Arc<AppCache>,
+}
 
 // Each blob is 128KB (131072 bytes) per EIP-4844
 const BLOB_SIZE_BYTES: u64 = 131072;
@@ -17,7 +80,7 @@ const BLOB_SIZE_BYTES: u64 = 131072;
 const BLOB_TARGET: u64 = 10;
 const BLOB_MAX: u64 = 15;
 
-#[derive(Serialize)]
+#[derive(Serialize, Clone)]
 struct Stats {
     total_blocks: u64,
     total_blobs: u64,
@@ -28,7 +91,7 @@ struct Stats {
     latest_gas_price: u64,
 }
 
-#[derive(Serialize)]
+#[derive(Serialize, Clone)]
 struct BlockTransaction {
     tx_hash: String,
     sender: String,
@@ -37,7 +100,7 @@ struct BlockTransaction {
     chain: String,
 }
 
-#[derive(Serialize)]
+#[derive(Serialize, Clone)]
 struct Block {
     block_number: u64,
     block_timestamp: u64,
@@ -53,7 +116,7 @@ struct Block {
     saturation_index: f64,
 }
 
-#[derive(Serialize)]
+#[derive(Serialize, Clone)]
 struct Sender {
     address: String,
     tx_count: u64,
@@ -74,7 +137,7 @@ struct ChartQuery {
     blocks: Option<u64>,
 }
 
-#[derive(Serialize)]
+#[derive(Serialize, Clone)]
 struct BlobTransaction {
     tx_hash: String,
     block_number: u64,
@@ -99,7 +162,7 @@ struct BlockQuery {
 // BPO2 activation timestamp (January 6, 2026)
 const BPO2_TIMESTAMP: u64 = 1767747671;
 
-#[derive(Serialize)]
+#[derive(Serialize, Clone)]
 struct AllTimeChartData {
     labels: Vec<u64>,        // Block numbers (sampled)
     blobs: Vec<f64>,         // Smoothed blob counts
@@ -111,7 +174,7 @@ struct AllTimeChartData {
 }
 
 // Chain behavior profile (also serves as chain stats)
-#[derive(Serialize)]
+#[derive(Serialize, Clone)]
 struct ChainProfile {
     chain: String,
     total_transactions: u64,
@@ -229,22 +292,52 @@ fn identify_chain(address: &str) -> String {
     }
 }
 
-async fn get_stats(State(db): State<Database>) -> Json<Stats> {
-    let stats = db.get_stats().expect("Failed to get stats");
+async fn get_stats(State(state): State<AppState>) -> Json<Stats> {
+    // Check cache first
+    {
+        let cache = state.cache.stats.read().await;
+        if let Some(entry) = cache.as_ref() {
+            if entry.is_valid(STATS_TTL) {
+                return Json(entry.data.clone());
+            }
+        }
+    }
 
-    Json(Stats {
-        total_blocks: stats.total_blocks,
-        total_blobs: stats.total_blobs,
-        total_transactions: stats.total_transactions,
-        avg_blobs_per_block: stats.avg_blobs_per_block,
-        latest_block: stats.latest_block,
-        earliest_block: stats.earliest_block,
-        latest_gas_price: stats.latest_gas_price,
-    })
+    // Cache miss - fetch from database
+    let db_stats = state.db.get_stats().expect("Failed to get stats");
+    let stats = Stats {
+        total_blocks: db_stats.total_blocks,
+        total_blobs: db_stats.total_blobs,
+        total_transactions: db_stats.total_transactions,
+        avg_blobs_per_block: db_stats.avg_blobs_per_block,
+        latest_block: db_stats.latest_block,
+        earliest_block: db_stats.earliest_block,
+        latest_gas_price: db_stats.latest_gas_price,
+    };
+
+    // Update cache
+    {
+        let mut cache = state.cache.stats.write().await;
+        *cache = Some(CacheEntry::new(stats.clone()));
+    }
+
+    Json(stats)
 }
 
-async fn get_recent_blocks(State(db): State<Database>) -> Json<Vec<Block>> {
-    let block_data = db
+async fn get_recent_blocks(State(state): State<AppState>) -> Json<Vec<Block>> {
+    // Check cache first
+    {
+        let cache = state.cache.blocks.read().await;
+        if let Some(entry) = cache.as_ref() {
+            if entry.is_valid(BLOCKS_TTL) {
+                return Json(entry.data.clone());
+            }
+        }
+    }
+
+    // Cache miss - fetch from database
+    let block_data = state
+        .db
         .get_recent_blocks(50)
         .expect("Failed to get recent blocks");
 
@@ -285,11 +378,31 @@ async fn get_recent_blocks(State(db): State<Database>) -> Json<Vec<Block>> {
         })
         .collect();
 
+    // Update cache
+    {
+        let mut cache = state.cache.blocks.write().await;
+        *cache = Some(CacheEntry::new(blocks.clone()));
+    }
+
     Json(blocks)
 }
 
-async fn get_top_senders(State(db): State<Database>) -> Json<Vec<Sender>> {
-    let sender_data = db.get_top_senders(20).expect("Failed to get top senders");
+async fn get_top_senders(State(state): State<AppState>) -> Json<Vec<Sender>> {
+    // Check cache first
+    {
+        let cache = state.cache.senders.read().await;
+        if let Some(entry) = cache.as_ref() {
+            if entry.is_valid(SENDERS_TTL) {
+                return Json(entry.data.clone());
+            }
+        }
+    }
+
+    // Cache miss - fetch from database
+    let sender_data = state
+        .db
+        .get_top_senders(20)
+        .expect("Failed to get top senders");
 
     let senders: Vec<Sender> = sender_data
         .into_iter()
@@ -305,15 +418,22 @@ async fn get_top_senders(State(db): State<Database>) -> Json<Vec<Sender>> {
         })
         .collect();
 
+    // Update cache
+    {
+        let mut cache = state.cache.senders.write().await;
+        *cache = Some(CacheEntry::new(senders.clone()));
+    }
+
     Json(senders)
 }
 
 async fn get_chart_data(
-    State(db): State<Database>,
+    State(state): State<AppState>,
     Query(params): Query<ChartQuery>,
 ) -> Json<ChartData> {
     let num_blocks = params.blocks.unwrap_or(100);
-    let chart_data = db
+    let chart_data = state
+        .db
         .get_chart_data(num_blocks)
         .expect("Failed to get chart data");
 
@@ -324,8 +444,20 @@ async fn get_chart_data(
     })
 }
 
-async fn get_blob_transactions(State(db): State<Database>) -> Json<Vec<BlobTransaction>> {
-    let tx_data = db
+async fn get_blob_transactions(State(state): State<AppState>) -> Json<Vec<BlobTransaction>> {
+    // Check cache first
+    {
+        let cache = state.cache.blob_transactions.read().await;
+        if let Some(entry) = cache.as_ref() {
+            if entry.is_valid(BLOB_TXS_TTL) {
+                return Json(entry.data.clone());
+            }
+        }
+    }
+
+    // Cache miss - fetch from database
+    let tx_data = state
+        .db
         .get_blob_transactions(50)
         .expect("Failed to get blob transactions");
 
@@ -346,16 +478,25 @@ async fn get_blob_transactions(State(db): State<Database>) -> Json<Vec<BlobTrans
         })
         .collect();
 
+    // Update cache
+    {
+        let mut cache = state.cache.blob_transactions.write().await;
+        *cache = Some(CacheEntry::new(txs.clone()));
+    }
+
     Json(txs)
 }
 
 async fn get_block(
-    State(db): State<Database>,
+    State(state): State<AppState>,
     Query(params): Query<BlockQuery>,
 ) -> Json<Option<Block>> {
     let block_number = params.block_number;
 
-    let block_data = db.get_block(block_number).expect("Failed to get block");
+    let block_data = state
+        .db
+        .get_block(block_number)
+        .expect("Failed to get block");
 
     if let Some(b) = block_data {
         let transactions: Vec<BlockTransaction> = b
@@ -394,13 +535,25 @@ async fn get_block(
     }
 }
 
-async fn get_all_time_chart(State(db): State<Database>) -> Json<AllTimeChartData> {
+async fn get_all_time_chart(State(state): State<AppState>) -> Json<AllTimeChartData> {
+    // Check cache first - this is an expensive query, cache for 5 minutes
+    {
+        let cache = state.cache.all_time_chart.read().await;
+        if let Some(entry) = cache.as_ref() {
+            if entry.is_valid(ALL_TIME_CHART_TTL) {
+                return Json(entry.data.clone());
+            }
+        }
+    }
+
+    // Cache miss - fetch from database
     // Target ~500 data points for smooth visualization
-    let chart_data = db
+    let chart_data = state
+        .db
         .get_all_time_chart_data(500, BPO2_TIMESTAMP)
         .expect("Failed to get all-time chart data");
 
-    Json(AllTimeChartData {
+    let result = AllTimeChartData {
         labels: chart_data.labels,
         blobs: chart_data.blobs,
         gas_prices: chart_data.gas_prices,
@@ -408,21 +561,50 @@ async fn get_all_time_chart(State(db): State<Database>) -> Json<AllTimeChartData
         targets: chart_data.targets,
         maxes: chart_data.maxes,
         bpo2_block: chart_data.bpo2_block,
-    })
+    };
+
+    // Update cache
+    {
+        let mut cache = state.cache.all_time_chart.write().await;
+        *cache = Some(CacheEntry::new(result.clone()));
+    }
+
+    Json(result)
 }
 
 async fn get_chain_profiles(
-    State(db): State<Database>,
+    State(state): State<AppState>,
     Query(params): Query<TimeRangeQuery>,
 ) -> Json<Vec<ChainProfile>> {
     let hours = params.hours.unwrap_or(24);
+    let is_all_time = hours >= 87600; // ~10 years means "all time"
+
+    // Check cache first
+    if is_all_time {
+        let cache = state.cache.chain_profiles_all_time.read().await;
+        if let Some(entry) = cache.as_ref() {
+            if entry.is_valid(CHAIN_PROFILES_ALL_TIME_TTL) {
+                return Json(entry.data.clone());
+            }
+        }
+    } else if hours == 24 {
+        let cache = state.cache.chain_profiles.read().await;
+        if let Some(entry) = cache.as_ref() {
+            if entry.is_valid(CHAIN_PROFILES_TTL) {
+                return Json(entry.data.clone());
+            }
+        }
+    }
+
+    // Cache miss - fetch from database
     let now = std::time::SystemTime::now()
         .duration_since(std::time::UNIX_EPOCH)
         .unwrap()
         .as_secs() as i64;
     let time_limit = now - (hours as i64 * 3600);
 
-    let rows = db
+    let rows = state
+        .db
         .get_transactions_in_time_range(time_limit)
         .expect("Failed to get transactions in time range");
 
@@ -496,6 +678,16 @@ async fn get_chain_profiles(
         .collect();
 
     profiles.sort_by(|a, b| b.total_blobs.cmp(&a.total_blobs));
+
+    // Update cache
+    if is_all_time {
+        let mut cache = state.cache.chain_profiles_all_time.write().await;
+        *cache = Some(CacheEntry::new(profiles.clone()));
+    } else if hours == 24 {
+        let mut cache = state.cache.chain_profiles.write().await;
+        *cache = Some(CacheEntry::new(profiles.clone()));
+    }
+
     Json(profiles)
 }
 
@@ -513,6 +705,12 @@ async fn main() -> eyre::Result<()> {
     // Create database with thread-safe connection
     let db = Database::new(&db_path)?;
 
+    // Create application state with cache
+    let state = AppState {
+        db,
+        cache: Arc::new(AppCache::new()),
+    };
+
     let static_dir = std::env::var("BLOB_STATIC_DIR").unwrap_or_else(|_| "web/dist".to_string());
 
     let app = Router::new()
@@ -528,7 +726,7 @@ async fn main() -> eyre::Result<()> {
         .nest_service("/assets", ServeDir::new(format!("{}/assets", static_dir)))
         .nest_service("/icons", ServeDir::new(format!("{}/icons", static_dir)))
         .layer(CorsLayer::permissive())
-        .with_state(db);
+        .with_state(state);
 
     let addr = std::env::var("BLOB_WEB_ADDR").unwrap_or_else(|_| "0.0.0.0:3500".to_string());
     let listener = tokio::net::TcpListener::bind(&addr).await?;

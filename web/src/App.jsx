@@ -26,51 +26,49 @@ function App() {
   const [chainProfiles, setChainProfiles] = useState([]);
   const [chainProfilesAllTime, setChainProfilesAllTime] = useState([]);
 
-  // Fetch all data - memoized to prevent recreation
+  // Fetch essential data first (fast endpoints), then heavy data
   const fetchData = useCallback(async () => {
     try {
-      const [
-        statsRes,
-        blocksRes,
-        sendersRes,
-        chartRes,
-        allTimeChartRes,
-        txsRes,
-        profilesRes,
-        profilesAllTimeRes,
-      ] = await Promise.all([
-        fetch("/api/stats"),
-        fetch("/api/blocks"),
-        fetch("/api/senders"),
-        fetch(`/api/chart?blocks=${selectedBlocks}`),
-        fetch("/api/all-time-chart"),
-        fetch("/api/blob-transactions"),
-        fetch("/api/chain-profiles"),
-        fetch("/api/chain-profiles?hours=87600"),
-      ]);
+      // Phase 1: Fetch essential data first (these are fast with caching)
+      const [statsRes, blocksRes, sendersRes, chartRes, txsRes, profilesRes] =
+        await Promise.all([
+          fetch("/api/stats"),
+          fetch("/api/blocks"),
+          fetch("/api/senders"),
+          fetch(`/api/chart?blocks=${selectedBlocks}`),
+          fetch("/api/blob-transactions"),
+          fetch("/api/chain-profiles"),
+        ]);
 
       if (statsRes.ok) setStats(await statsRes.json());
       if (blocksRes.ok) setBlocks(await blocksRes.json());
       if (sendersRes.ok) setSenders(await sendersRes.json());
       if (chartRes.ok) setChartData(await chartRes.json());
-      if (allTimeChartRes.ok) setAllTimeChartData(await allTimeChartRes.json());
       if (txsRes.ok) setBlobTransactions(await txsRes.json());
       if (profilesRes.ok) setChainProfiles(await profilesRes.json());
-      if (profilesAllTimeRes.ok)
-        setChainProfilesAllTime(await profilesAllTimeRes.json());
 
+      // Show content immediately after essential data loads
       setLastUpdate(new Date());
       setIsLoading(false);
+
+      // Phase 2: Fetch heavy data in background (deferred)
+      const [allTimeChartRes, profilesAllTimeRes] = await Promise.all([
+        fetch("/api/all-time-chart"),
+        fetch("/api/chain-profiles?hours=87600"),
+      ]);
+
+      if (allTimeChartRes.ok) setAllTimeChartData(await allTimeChartRes.json());
+      if (profilesAllTimeRes.ok)
+        setChainProfilesAllTime(await profilesAllTimeRes.json());
     } catch (error) {
       console.error("Error fetching data:", error);
       setIsLoading(false);
     }
   }, [selectedBlocks]);
 
-  // Initial fetch and polling (3 second interval for better performance)
   useEffect(() => {
     fetchData();
-    const interval = setInterval(fetchData, 3000);
+    const interval = setInterval(fetchData, 30000);
     return () => clearInterval(interval);
   }, [fetchData]);
 

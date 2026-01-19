@@ -113,6 +113,24 @@ impl Database {
             (),
         )?;
 
+        // Index for blob_hashes lookups by tx_hash (used in JOINs)
+        conn.execute(
+            "CREATE INDEX IF NOT EXISTS idx_blob_hashes_tx ON blob_hashes(tx_hash)",
+            (),
+        )?;
+
+        // Composite index for chain profiles time-range queries
+        conn.execute(
+            "CREATE INDEX IF NOT EXISTS idx_blob_txs_created_sender ON blob_transactions(created_at, sender)",
+            (),
+        )?;
+
+        // Index for blocks timestamp (used in time-based queries)
+        conn.execute(
+            "CREATE INDEX IF NOT EXISTS idx_blocks_timestamp ON blocks(block_timestamp)",
+            (),
+        )?;
+
         Ok(())
     }
 
@@ -258,16 +276,124 @@ impl Database {
     }
 
     /// Get recent blocks with their transactions.
+    /// Uses a single JOIN query to avoid N+1 problem.
     pub fn get_recent_blocks(&self, limit: u64) -> eyre::Result<Vec<BlockData>> {
         let conn = self.connection();
 
+        // First, get the block numbers we want (this is fast with the index)
+        let mut block_stmt =
+            conn.prepare("SELECT block_number FROM blocks ORDER BY block_number DESC LIMIT ?")?;
+        let block_numbers: Vec<u64> = block_stmt
+            .query_map([limit], |row| row.get(0))?
+            .filter_map(|r| r.ok())
+            .collect();
+
+        if block_numbers.is_empty() {
+            return Ok(Vec::new());
+        }
+
+        let min_block = *block_numbers.last().unwrap();
+        let max_block = *block_numbers.first().unwrap();
+
+        // Single query with JOIN to get blocks and their transactions
         let mut stmt = conn.prepare(
-            "SELECT block_number, block_timestamp, tx_count, total_blobs, gas_used, gas_price, excess_blob_gas
-             FROM blocks ORDER BY block_number DESC LIMIT ?",
+            "SELECT b.block_number, b.block_timestamp, b.tx_count, b.total_blobs,
+                    b.gas_used, b.gas_price, b.excess_blob_gas,
+                    bt.tx_hash, bt.sender, bt.blob_count
+             FROM blocks b
+             LEFT JOIN blob_transactions bt ON b.block_number = bt.block_number
+             WHERE b.block_number >= ? AND b.block_number <= ?
+             ORDER BY b.block_number DESC, bt.tx_hash",
         )?;
 
-        let block_data: Vec<(u64, u64, u64, u64, u64, u64, u64)> = stmt
-            .query_map([limit], |row| {
+        // Use a HashMap to group transactions by block
+        let mut blocks_map: std::collections::HashMap<u64, BlockData> =
+            std::collections::HashMap::new();
+
+        let rows = stmt.query_map([min_block, max_block], |row| {
+            Ok((
+                row.get::<_, u64>(0)?,            // block_number
+                row.get::<_, u64>(1)?,            // block_timestamp
+                row.get::<_, u64>(2)?,            // tx_count
+                row.get::<_, u64>(3)?,            // total_blobs
+                row.get::<_, u64>(4)?,            // gas_used
+                row.get::<_, u64>(5)?,            // gas_price
+                row.get::<_, u64>(6)?,            // excess_blob_gas
+                row.get::<_, Option<String>>(7)?, // tx_hash (nullable from LEFT JOIN)
+                row.get::<_, Option<String>>(8)?, // sender
+                row.get::<_, Option<u64>>(9)?,    // blob_count
+            ))
+        })?;
+
+        for row in rows.flatten() {
+            let (
+                block_number,
+                block_timestamp,
+                tx_count,
+                total_blobs,
+                gas_used,
+                gas_price,
+                excess_blob_gas,
+                tx_hash,
+                sender,
+                blob_count,
+            ) = row;
+
+            let block = blocks_map.entry(block_number).or_insert_with(|| BlockData {
+                block_number,
+                block_timestamp,
+                tx_count,
+                total_blobs,
+                gas_used,
+                gas_price,
+                excess_blob_gas,
+                transactions: Vec::new(),
+            });
+
+            // Add transaction if present (LEFT JOIN may return NULL)
+            if let (Some(tx_hash), Some(sender), Some(blob_count)) = (tx_hash, sender, blob_count) {
+                block.transactions.push(TransactionData {
+                    tx_hash,
+                    sender,
+                    blob_count,
+                });
+            }
+        }
+
+        // Convert to Vec and sort by block number descending
+        let mut blocks: Vec<BlockData> = blocks_map.into_values().collect();
+        blocks.sort_by(|a, b| b.block_number.cmp(&a.block_number));
+
+        Ok(blocks)
+    }
+
+    /// Get a specific block by number.
+    /// Uses a single JOIN query to avoid N+1 problem.
+    pub fn get_block(&self, block_number: u64) -> eyre::Result<Option<BlockData>> {
+        let conn = self.connection();
+
+        // Single query with JOIN to get block and its transactions
+        let mut stmt = conn.prepare(
+            "SELECT b.block_timestamp, b.tx_count, b.total_blobs, b.gas_used, b.gas_price,
+                    b.excess_blob_gas, bt.tx_hash, bt.sender, bt.blob_count
+             FROM blocks b
+             LEFT JOIN blob_transactions bt ON b.block_number = bt.block_number
+             WHERE b.block_number = ?
+             ORDER BY bt.tx_hash",
+        )?;
+
+        let rows: Vec<(
+            u64,
+            u64,
+            u64,
+            u64,
+            u64,
+            u64,
+            Option<String>,
+            Option<String>,
+            Option<u64>,
+        )> = stmt
+            .query_map([block_number], |row| {
                 Ok((
                     row.get(0)?,
                     row.get(1)?,
@@ -276,112 +402,42 @@ impl Database {
                     row.get(4)?,
                     row.get(5)?,
                     row.get(6)?,
+                    row.get(7)?,
+                    row.get(8)?,
                 ))
             })?
             .filter_map(|r| r.ok())
             .collect();
 
-        let mut blocks = Vec::with_capacity(block_data.len());
+        if rows.is_empty() {
+            return Ok(None);
+        }
 
-        for (
+        // First row contains block data
+        let (block_timestamp, tx_count, total_blobs, gas_used, gas_price, excess_blob_gas, _, _, _) =
+            &rows[0];
+
+        let mut transactions = Vec::new();
+        for (_, _, _, _, _, _, tx_hash, sender, blob_count) in &rows {
+            if let (Some(tx_hash), Some(sender), Some(blob_count)) = (tx_hash, sender, blob_count) {
+                transactions.push(TransactionData {
+                    tx_hash: tx_hash.clone(),
+                    sender: sender.clone(),
+                    blob_count: *blob_count,
+                });
+            }
+        }
+
+        Ok(Some(BlockData {
             block_number,
-            block_timestamp,
-            tx_count,
-            total_blobs,
-            gas_used,
-            gas_price,
-            excess_blob_gas,
-        ) in block_data
-        {
-            let mut tx_stmt = conn.prepare(
-                "SELECT tx_hash, sender, blob_count FROM blob_transactions WHERE block_number = ?",
-            )?;
-
-            let transactions: Vec<TransactionData> = tx_stmt
-                .query_map([block_number], |row| {
-                    Ok(TransactionData {
-                        tx_hash: row.get(0)?,
-                        sender: row.get(1)?,
-                        blob_count: row.get(2)?,
-                    })
-                })?
-                .filter_map(|r| r.ok())
-                .collect();
-
-            blocks.push(BlockData {
-                block_number,
-                block_timestamp,
-                tx_count,
-                total_blobs,
-                gas_used,
-                gas_price,
-                excess_blob_gas,
-                transactions,
-            });
-        }
-
-        Ok(blocks)
-    }
-
-    /// Get a specific block by number.
-    pub fn get_block(&self, block_number: u64) -> eyre::Result<Option<BlockData>> {
-        let conn = self.connection();
-
-        let block_row: Option<(u64, u64, u64, u64, u64, u64)> = conn
-            .query_row(
-                "SELECT block_timestamp, tx_count, total_blobs, gas_used, gas_price, excess_blob_gas
-                 FROM blocks WHERE block_number = ?",
-                [block_number],
-                |row| {
-                    Ok((
-                        row.get(0)?,
-                        row.get(1)?,
-                        row.get(2)?,
-                        row.get(3)?,
-                        row.get(4)?,
-                        row.get(5)?,
-                    ))
-                },
-            )
-            .ok();
-
-        if let Some((
-            block_timestamp,
-            tx_count,
-            total_blobs,
-            gas_used,
-            gas_price,
-            excess_blob_gas,
-        )) = block_row
-        {
-            let mut tx_stmt = conn.prepare(
-                "SELECT tx_hash, sender, blob_count FROM blob_transactions WHERE block_number = ?",
-            )?;
-
-            let transactions: Vec<TransactionData> = tx_stmt
-                .query_map([block_number], |row| {
-                    Ok(TransactionData {
-                        tx_hash: row.get(0)?,
-                        sender: row.get(1)?,
-                        blob_count: row.get(2)?,
-                    })
-                })?
-                .filter_map(|r| r.ok())
-                .collect();
-
-            Ok(Some(BlockData {
-                block_number,
-                block_timestamp,
-                tx_count,
-                total_blobs,
-                gas_used,
-                gas_price,
-                excess_blob_gas,
-                transactions,
-            }))
-        } else {
-            Ok(None)
-        }
+            block_timestamp: *block_timestamp,
+            tx_count: *tx_count,
+            total_blobs: *total_blobs,
+            gas_used: *gas_used,
+            gas_price: *gas_price,
+            excess_blob_gas: *excess_blob_gas,
+            transactions,
+        }))
     }
 
     /// Get top senders by total blobs.
@@ -473,50 +529,64 @@ impl Database {
     }
 
     /// Get recent blob transactions.
+    /// Uses a single JOIN query to avoid N+1 problem.
     pub fn get_blob_transactions(&self, limit: u64) -> eyre::Result<Vec<BlobTransactionData>> {
         let conn = self.connection();
 
+        // Single query with JOIN to get transactions and their blob hashes
         let mut stmt = conn.prepare(
-            "SELECT tx_hash, block_number, sender, blob_count, gas_price
-             FROM blob_transactions
-             ORDER BY created_at DESC
-             LIMIT ?",
+            "SELECT bt.tx_hash, bt.block_number, bt.sender, bt.blob_count, bt.gas_price,
+                    bh.blob_hash, bh.blob_index
+             FROM blob_transactions bt
+             LEFT JOIN blob_hashes bh ON bt.tx_hash = bh.tx_hash
+             WHERE bt.tx_hash IN (
+                 SELECT tx_hash FROM blob_transactions ORDER BY created_at DESC LIMIT ?
+             )
+             ORDER BY bt.created_at DESC, bt.tx_hash, bh.blob_index",
         )?;
 
-        let txs: Vec<(String, u64, String, u64, u64)> = stmt
-            .query_map([limit], |row| {
-                Ok((
-                    row.get(0)?,
-                    row.get(1)?,
-                    row.get(2)?,
-                    row.get(3)?,
-                    row.get(4)?,
-                ))
-            })?
-            .filter_map(|r| r.ok())
-            .collect();
+        // Use a map to group blob hashes by transaction
+        let mut txs_map: std::collections::HashMap<String, BlobTransactionData> =
+            std::collections::HashMap::new();
+        let mut tx_order: Vec<String> = Vec::new();
 
-        let mut result = Vec::with_capacity(txs.len());
+        let rows = stmt.query_map([limit], |row| {
+            Ok((
+                row.get::<_, String>(0)?,         // tx_hash
+                row.get::<_, u64>(1)?,            // block_number
+                row.get::<_, String>(2)?,         // sender
+                row.get::<_, u64>(3)?,            // blob_count
+                row.get::<_, u64>(4)?,            // gas_price
+                row.get::<_, Option<String>>(5)?, // blob_hash (nullable from LEFT JOIN)
+            ))
+        })?;
 
-        for (tx_hash, block_number, sender, blob_count, gas_price) in txs {
-            let mut blob_stmt = conn.prepare(
-                "SELECT blob_hash FROM blob_hashes WHERE tx_hash = ? ORDER BY blob_index",
-            )?;
+        for row in rows.flatten() {
+            let (tx_hash, block_number, sender, blob_count, gas_price, blob_hash) = row;
 
-            let blob_hashes: Vec<String> = blob_stmt
-                .query_map([&tx_hash], |row| row.get(0))?
-                .filter_map(|r| r.ok())
-                .collect();
-
-            result.push(BlobTransactionData {
-                tx_hash,
-                block_number,
-                sender,
-                blob_count,
-                gas_price,
-                blob_hashes,
+            let tx = txs_map.entry(tx_hash.clone()).or_insert_with(|| {
+                tx_order.push(tx_hash.clone());
+                BlobTransactionData {
+                    tx_hash,
+                    block_number,
+                    sender,
+                    blob_count,
+                    gas_price,
+                    blob_hashes: Vec::new(),
+                }
             });
+
+            // Add blob hash if present
+            if let Some(hash) = blob_hash {
+                tx.blob_hashes.push(hash);
+            }
         }
+
+        // Return in order (by created_at DESC)
+        let result: Vec<BlobTransactionData> = tx_order
+            .into_iter()
+            .filter_map(|hash| txs_map.remove(&hash))
+            .collect();
 
         Ok(result)
     }
