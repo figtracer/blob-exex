@@ -1,4 +1,4 @@
-use alloy_consensus::{transaction::SignerRecoverable, BlockHeader, Transaction};
+use alloy_consensus::{BlockHeader, Transaction, transaction::SignerRecoverable};
 use alloy_eips::{eip4844::DATA_GAS_PER_BLOB, eip7840::BlobParams};
 use blob_exex::Database;
 use futures::{Future, TryStreamExt};
@@ -56,7 +56,7 @@ fn process_chain(db: &Database, chain: &Chain) -> eyre::Result<()> {
 
         let blob_gas_price: i64 = block
             .header()
-            .blob_fee(BlobParams::bpo2)
+            .blob_fee(BlobParams::bpo2())
             .unwrap_or(0)
             .try_into()
             .unwrap_or(i64::MAX);
