@@ -13,13 +13,13 @@ path = "src/web.rs"
 
 [dependencies]
 # reth
-reth = { git = "https://github.com/paradigmxyz/reth", tag = "v1.9.3" }
-reth-execution-types = { git = "https://github.com/paradigmxyz/reth", tag = "v1.9.3" }
-reth-exex = { git = "https://github.com/paradigmxyz/reth", tag = "v1.9.3", features = ["serde"] }
-reth-node-api = { git = "https://github.com/paradigmxyz/reth", tag = "v1.9.3" }
-reth-node-ethereum = { git = "https://github.com/paradigmxyz/reth", tag = "v1.9.3" }
-reth-primitives = { git = "https://github.com/paradigmxyz/reth", tag = "v1.9.3" }
-reth-tracing = { git = "https://github.com/paradigmxyz/reth", tag = "v1.9.3" }
+reth = { git = "https://github.com/paradigmxyz/reth", tag = "v1.10.0" }
+reth-execution-types = { git = "https://github.com/paradigmxyz/reth", tag = "v1.10.0" }
+reth-exex = { git = "https://github.com/paradigmxyz/reth", tag = "v1.10.0", features = ["serde"] }
+reth-node-api = { git = "https://github.com/paradigmxyz/reth", tag = "v1.10.0" }
+reth-node-ethereum = { git = "https://github.com/paradigmxyz/reth", tag = "v1.10.0" }
+reth-primitives = { git = "https://github.com/paradigmxyz/reth", tag = "v1.10.0" }
+reth-tracing = { git = "https://github.com/paradigmxyz/reth", tag = "v1.10.0" }
 
 # alloy
 alloy-consensus = "1.0.37"
