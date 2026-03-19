@@ -6,7 +6,7 @@ use reth_execution_types::Chain;
 use reth_exex::{ExExContext, ExExEvent, ExExNotification};
 use reth_node_api::FullNodeComponents;
 use reth_node_ethereum::EthereumNode;
-use reth_primitives::EthPrimitives;
+use reth::primitives::EthPrimitives;
 use reth_tracing::tracing::info;
 
 async fn init<Node>(
